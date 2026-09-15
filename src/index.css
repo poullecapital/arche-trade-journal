@@ -1,26 +1,106 @@
-@import url('https://fonts.googleapis.com/css2?family=Young+Serif&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 :root {
+  --bg: #f6f4ee;
+  --surface: #ffffff;
+  --surface-2: #efece2;
+  --ink: #161a16;
+  --ink-muted: #5c655b;
+  --ink-faint: #8a9088;
+  --border: #ddd8c8;
+  --accent: #1f6f56;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3efe6;
+  --amber: #96662a;
+  --amber-soft: #f3e7d4;
+  --red: #b3402c;
+  --red-soft: #f6e4df;
+  --shadow: 0 1px 2px rgba(30, 25, 10, 0.06), 0 8px 24px rgba(30, 25, 10, 0.05);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c0f0d;
+    --surface: #141712;
+    --surface-2: #191d17;
+    --ink: #e9ece6;
+    --ink-muted: #9aa397;
+    --ink-faint: #6b7369;
+    --border: #262c24;
+    --accent: #49d998;
+    --accent-ink: #06140d;
+    --accent-soft: #122a1e;
+    --amber: #d9a24e;
+    --amber-soft: #2a2216;
+    --red: #e2685a;
+    --red-soft: #2c1a17;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0c0f0d;
+  --surface: #141712;
+  --surface-2: #191d17;
+  --ink: #e9ece6;
+  --ink-muted: #9aa397;
+  --ink-faint: #6b7369;
+  --border: #262c24;
+  --accent: #49d998;
+  --accent-ink: #06140d;
+  --accent-soft: #122a1e;
+  --amber: #d9a24e;
+  --amber-soft: #2a2216;
+  --red: #e2685a;
+  --red-soft: #2c1a17;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.35);
   color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: 'Young Serif', serif;
-  background: #000;
-  color: #fff;
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.font-display {
+  font-family: "Fraunces", Georgia, serif;
+}
+
+.font-mono,
+.tabular {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 input,
 textarea,
-select {
+select,
+button {
   font-family: inherit;
-  border: none;
+  color: inherit;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  outline: none;
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
 }
