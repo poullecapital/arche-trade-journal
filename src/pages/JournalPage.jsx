@@ -126,34 +126,34 @@ export function JournalPage() {
   )
 }
 
+function initialTradeForm() {
+  return {
+    symbol: '',
+    direction: 'long',
+    strategyId: '',
+    entryPrice: '',
+    entryQuantity: '',
+    entryDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+    entryFees: '0',
+    stopLoss: '',
+    targetPrice: '',
+    notes: '',
+    tags: '',
+  }
+}
+
 function TradeFormModal({ open, fund, onClose }) {
   const { data: strategies = [] } = useStrategies(fund.id)
   const openTrade = useOpenTrade()
-  const [form, setForm] = useState(initialForm())
+  const [form, setForm] = useState(initialTradeForm)
   const [ruleChecks, setRuleChecks] = useState({})
 
   useEffect(() => {
     if (open) {
-      setForm(initialForm())
+      setForm(initialTradeForm())
       setRuleChecks({})
     }
   }, [open])
-
-  function initialForm() {
-    return {
-      symbol: '',
-      direction: 'long',
-      strategyId: '',
-      entryPrice: '',
-      entryQuantity: '',
-      entryDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-      entryFees: '0',
-      stopLoss: '',
-      targetPrice: '',
-      notes: '',
-      tags: '',
-    }
-  }
 
   const strategy = strategies.find((s) => s.id === form.strategyId)
 

@@ -3,7 +3,7 @@ import { Plus, Trash2, RefreshCw } from 'lucide-react'
 import { useFundContext } from '../context/FundContext'
 import { useWatchlist, useUpsertWatchlistItem, useDeleteWatchlistItem } from '../hooks/useWatchlist'
 import { useHoldings, useUpsertHolding, useUpdateHoldingPrice, useDeleteHolding } from '../hooks/useHoldings'
-import { Button, Card, EmptyState, Field, Input, Modal, PageHeader, Pill, Select, Textarea, formatCurrency, formatNumber } from '../components/ui'
+import { Button, Card, EmptyState, Field, Input, Modal, PageHeader, Pill, Textarea, formatCurrency, formatNumber } from '../components/ui'
 
 export function WatchlistPage() {
   const { selectedFund } = useFundContext()

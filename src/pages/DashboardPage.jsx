@@ -1,15 +1,14 @@
 import { useMemo } from 'react'
 import { format } from 'date-fns'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { useFundSummaries, useFirmSummary } from '../hooks/useFunds'
+import { useFundSummaries } from '../hooks/useFunds'
 import { useAllTrades } from '../hooks/useTrades'
 import { useFundContext } from '../context/FundContext'
-import { Card, EmptyState, PageHeader, Pill, Stat, formatCurrency, formatNumber } from '../components/ui'
+import { Card, EmptyState, PageHeader, Pill, Stat, formatCurrency } from '../components/ui'
 
 export function DashboardPage() {
   const { funds } = useFundContext()
   const { data: summaries = [] } = useFundSummaries()
-  const { data: firm } = useFirmSummary()
   const { data: trades = [] } = useAllTrades()
 
   const closedTrades = useMemo(
