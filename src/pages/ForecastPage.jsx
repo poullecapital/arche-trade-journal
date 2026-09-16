@@ -18,6 +18,54 @@ function stddev(values) {
 }
 
 const HORIZON_DAYS = 90
+const MIN_TRADES_FOR_SIMULATION = 15
+const SIMULATIONS = 500
+
+function percentile(sortedValues, p) {
+  if (sortedValues.length === 0) return 0
+  const idx = Math.min(sortedValues.length - 1, Math.max(0, Math.ceil(p * sortedValues.length) - 1))
+  return sortedValues[idx]
+}
+
+function runMonteCarlo(tradePnls, numTrades) {
+  const n = tradePnls.length
+  const paths = []
+  const maxDrawdowns = []
+
+  for (let s = 0; s < SIMULATIONS; s++) {
+    let cumulative = 0
+    let peak = 0
+    let maxDD = 0
+    const path = [0]
+    for (let i = 0; i < numTrades; i++) {
+      cumulative += tradePnls[Math.floor(Math.random() * n)]
+      peak = Math.max(peak, cumulative)
+      maxDD = Math.max(maxDD, peak - cumulative)
+      path.push(cumulative)
+    }
+    paths.push(path)
+    maxDrawdowns.push(maxDD)
+  }
+
+  const bands = []
+  for (let step = 0; step <= numTrades; step++) {
+    const atStep = paths.map((p) => p[step]).sort((a, b) => a - b)
+    bands.push({ step, p10: percentile(atStep, 0.1), p50: percentile(atStep, 0.5), p90: percentile(atStep, 0.9) })
+  }
+
+  const finals = paths.map((p) => p[numTrades]).sort((a, b) => a - b)
+  maxDrawdowns.sort((a, b) => a - b)
+
+  return {
+    bands,
+    p10Final: percentile(finals, 0.1),
+    p50Final: percentile(finals, 0.5),
+    p90Final: percentile(finals, 0.9),
+    medianDrawdown: percentile(maxDrawdowns, 0.5),
+    tailDrawdown: percentile(maxDrawdowns, 0.9),
+    probLoss: (finals.filter((v) => v < 0).length / finals.length) * 100,
+  }
+}
 
 export function ForecastPage() {
   const { funds } = useFundContext()
@@ -78,6 +126,41 @@ export function ForecastPage() {
     return [...history.slice(0, -1), bridge, ...projections]
   }, [closedTrades])
 
+  const monteCarlo = useMemo(() => {
+    if (closedTrades.length < MIN_TRADES_FOR_SIMULATION) return null
+
+    const tradePnls = closedTrades.map((t) => Number(t.pnl || 0))
+    const firstDate = closedTrades[0].exit_date
+    const lastDate = closedTrades[closedTrades.length - 1].exit_date
+    const daySpan = Math.max(differenceInCalendarDays(new Date(lastDate), new Date(firstDate)), 1)
+    const tradesPerDay = closedTrades.length / daySpan
+    const numTrades = Math.min(150, Math.max(20, Math.round(tradesPerDay * HORIZON_DAYS)))
+
+    let lastActual = 0
+    for (const t of closedTrades) lastActual += Number(t.pnl || 0)
+
+    const sim = runMonteCarlo(tradePnls, numTrades)
+    const chart = sim.bands
+      .filter((_, i) => i % Math.max(1, Math.floor(numTrades / 40)) === 0 || i === sim.bands.length - 1)
+      .map((b) => ({
+        label: `+${b.step}`,
+        p10: Math.round(lastActual + b.p10),
+        p50: Math.round(lastActual + b.p50),
+        p90: Math.round(lastActual + b.p90),
+      }))
+
+    return {
+      numTrades,
+      chart,
+      p10Final: Math.round(lastActual + sim.p10Final),
+      p50Final: Math.round(lastActual + sim.p50Final),
+      p90Final: Math.round(lastActual + sim.p90Final),
+      medianDrawdown: Math.round(sim.medianDrawdown),
+      tailDrawdown: Math.round(sim.tailDrawdown),
+      probLoss: sim.probLoss,
+    }
+  }, [closedTrades])
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader eyebrow="Growth Intelligence" title="Forecast" />
@@ -125,6 +208,60 @@ export function ForecastPage() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+        )}
+      </Card>
+
+      <Card className="p-5">
+        <h2 className="font-display text-lg font-semibold mb-1">Monte Carlo simulation</h2>
+        <p className="text-sm text-[var(--ink-muted)] mb-4">
+          {SIMULATIONS} simulated futures, each resampling from your actual closed-trade P&amp;L distribution — probabilistic
+          growth and drawdown risk, not a trendline.
+        </p>
+        {!monteCarlo ? (
+          <p className="text-sm text-[var(--ink-faint)]">
+            Needs at least {MIN_TRADES_FOR_SIMULATION} closed trades to be meaningful — you have {closedTrades.length} so far.
+          </p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+              <Stat label="Median outcome" value={formatCurrency(monteCarlo.p50Final)} sub={`over next ~${monteCarlo.numTrades} trades`} />
+              <Stat label="10th–90th percentile" value={`${formatCurrency(monteCarlo.p10Final)} to ${formatCurrency(monteCarlo.p90Final)}`} />
+              <Stat label="Median drawdown" value={formatCurrency(monteCarlo.medianDrawdown)} />
+              <Stat label="Chance of a loss" value={`${formatNumber(monteCarlo.probLoss, 0)}%`} tone={monteCarlo.probLoss > 40 ? 'negative' : 'default'} />
+            </div>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monteCarlo.chart} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: 'var(--ink-faint)', fontSize: 11 }}
+                    axisLine={{ stroke: 'var(--border)' }}
+                    tickLine={false}
+                    label={{ value: 'trades from now', position: 'insideBottom', offset: -2, fill: 'var(--ink-faint)', fontSize: 11 }}
+                  />
+                  <YAxis
+                    tick={{ fill: 'var(--ink-faint)', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => formatCurrency(v)}
+                    width={70}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                    formatter={(v) => formatCurrency(v)}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Line type="monotone" dataKey="p90" name="90th percentile" stroke="var(--accent)" strokeWidth={1.5} dot={false} />
+                  <Line type="monotone" dataKey="p50" name="Median" stroke="var(--amber)" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="p10" name="10th percentile" stroke="var(--red)" strokeWidth={1.5} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-xs text-[var(--ink-faint)] mt-3">
+              Tail risk: in the worst 10% of simulated paths, drawdown reaches {formatCurrency(monteCarlo.tailDrawdown)} or more.
+            </p>
+          </>
         )}
       </Card>
 
