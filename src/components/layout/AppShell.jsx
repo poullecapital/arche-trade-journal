@@ -1,14 +1,12 @@
 import { Outlet } from 'react-router-dom'
-import { Moon, Sun, LogOut } from 'lucide-react'
+import { Moon, Sun } from 'lucide-react'
 import { Sidebar, MobileNav } from './Sidebar'
 import { useTheme } from '../../context/ThemeContext'
-import { useAuth } from '../../context/AuthContext'
 import { useFundContext } from '../../context/FundContext'
 import { Select } from '../ui'
 
 export function AppShell() {
   const { theme, toggleTheme } = useTheme()
-  const { signOut, user } = useAuth()
   const { funds, selectedFundId, setSelectedFundId } = useFundContext()
 
   return (
@@ -35,22 +33,12 @@ export function AppShell() {
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="hidden sm:inline text-xs text-[var(--ink-faint)] font-mono truncate max-w-[16ch]">
-              {user?.email}
-            </span>
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
               title="Toggle theme"
             >
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-            <button
-              onClick={() => signOut()}
-              className="p-2 rounded-lg text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
-              title="Sign out"
-            >
-              <LogOut size={16} />
             </button>
           </div>
         </header>

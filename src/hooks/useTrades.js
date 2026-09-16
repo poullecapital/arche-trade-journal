@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../context/AuthContext'
 
 export function useTrades(fundId, filters = {}) {
   return useQuery({
@@ -109,10 +108,9 @@ export function useDeleteTrade() {
 }
 
 export function useUploadScreenshot() {
-  const { user } = useAuth()
   return useMutation({
     mutationFn: async (file) => {
-      const path = `${user.id}/${crypto.randomUUID()}-${file.name}`
+      const path = `${crypto.randomUUID()}-${file.name}`
       const { error } = await supabase.storage.from('trade-screenshots').upload(path, file)
       if (error) throw error
       return path

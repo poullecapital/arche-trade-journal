@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { Download, LogOut, Moon, Sun } from 'lucide-react'
+import { Download, Moon, Sun } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
-import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { Button, Card, PageHeader } from '../components/ui'
 
@@ -24,7 +23,6 @@ function download(filename, content) {
 
 export function SettingsPage() {
   const { theme, setTheme } = useTheme()
-  const { user, signOut } = useAuth()
   const [exporting, setExporting] = useState(false)
 
   async function exportTrades() {
@@ -71,14 +69,6 @@ export function SettingsPage() {
             <Moon size={15} /> Dark
           </Button>
         </div>
-      </Card>
-
-      <Card className="p-5 flex flex-col gap-4">
-        <h2 className="font-display text-lg font-semibold">Account</h2>
-        <div className="text-sm text-[var(--ink-muted)]">{user?.email}</div>
-        <Button variant="secondary" className="self-start" onClick={() => signOut()}>
-          <LogOut size={15} /> Sign out
-        </Button>
       </Card>
 
       <Card className="p-5 flex flex-col gap-4">
