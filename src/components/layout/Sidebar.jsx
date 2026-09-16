@@ -5,6 +5,7 @@ import {
   ListChecks,
   Landmark,
   Eye,
+  TrendingUp,
   Coffee,
   Settings,
 } from 'lucide-react'
@@ -15,6 +16,7 @@ const items = [
   { to: '/strategies', label: 'Strategies', icon: ListChecks },
   { to: '/funds', label: 'Funds & Ledger', icon: Landmark },
   { to: '/watchlist', label: 'Watchlist', icon: Eye },
+  { to: '/forecast', label: 'Forecast', icon: TrendingUp },
   { to: '/relax', label: 'Relax', icon: Coffee },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]

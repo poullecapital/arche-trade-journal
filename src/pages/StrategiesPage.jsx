@@ -1,14 +1,38 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Plus, X, Trash2, Pencil } from 'lucide-react'
 import { useFundContext } from '../context/FundContext'
 import { useStrategies, useUpsertStrategy, useDeleteStrategy } from '../hooks/useStrategies'
-import { Button, Card, EmptyState, Field, Input, Modal, PageHeader, Pill, Select, Textarea } from '../components/ui'
+import { useAllTrades } from '../hooks/useTrades'
+import { Button, Card, EmptyState, Field, Input, Modal, PageHeader, Pill, Select, Textarea, formatCurrency } from '../components/ui'
+
+function adherenceStatsFor(strategyId, trades) {
+  const closed = trades.filter((t) => t.strategy_id === strategyId && t.status === 'closed' && t.rule_results?.length > 0)
+  if (closed.length === 0) return null
+
+  const followed = closed.filter((t) => t.rule_results.every((r) => r.passed))
+  const broke = closed.filter((t) => !t.rule_results.every((r) => r.passed))
+  const avg = (list) => (list.length ? list.reduce((s, t) => s + Number(t.pnl || 0), 0) / list.length : null)
+
+  return {
+    total: closed.length,
+    adherencePct: Math.round((followed.length / closed.length) * 100),
+    avgPnlFollowed: avg(followed),
+    avgPnlBroke: avg(broke),
+  }
+}
 
 export function StrategiesPage() {
   const { selectedFundId, funds } = useFundContext()
   const { data: strategies = [] } = useStrategies(selectedFundId)
+  const { data: allTrades = [] } = useAllTrades()
   const deleteStrategy = useDeleteStrategy()
   const [editing, setEditing] = useState(null) // strategy object or 'new' or null
+
+  const adherenceByStrategy = useMemo(() => {
+    const map = {}
+    for (const s of strategies) map[s.id] = adherenceStatsFor(s.id, allTrades)
+    return map
+  }, [strategies, allTrades])
 
   return (
     <div className="flex flex-col gap-6">
@@ -62,6 +86,26 @@ export function StrategiesPage() {
               )}
               {s.playbook && (
                 <p className="text-sm text-[var(--ink-faint)] whitespace-pre-wrap line-clamp-4">{s.playbook}</p>
+              )}
+              {adherenceByStrategy[s.id] && (
+                <div className="border-t border-[var(--border)] pt-3 grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <div className="text-[var(--ink-faint)] font-mono uppercase">Adherence</div>
+                    <div className="tabular font-medium">{adherenceByStrategy[s.id].adherencePct}%</div>
+                  </div>
+                  <div>
+                    <div className="text-[var(--ink-faint)] font-mono uppercase">Avg P&amp;L · followed</div>
+                    <div className="tabular font-medium text-[var(--accent)]">
+                      {adherenceByStrategy[s.id].avgPnlFollowed != null ? formatCurrency(adherenceByStrategy[s.id].avgPnlFollowed) : '—'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[var(--ink-faint)] font-mono uppercase">Avg P&amp;L · broke rules</div>
+                    <div className="tabular font-medium text-[var(--red)]">
+                      {adherenceByStrategy[s.id].avgPnlBroke != null ? formatCurrency(adherenceByStrategy[s.id].avgPnlBroke) : '—'}
+                    </div>
+                  </div>
+                </div>
               )}
             </Card>
           ))}

@@ -1,10 +1,59 @@
 import { useMemo } from 'react'
-import { format } from 'date-fns'
+import { eachDayOfInterval, format, startOfWeek, subWeeks } from 'date-fns'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useFundSummaries } from '../hooks/useFunds'
 import { useAllTrades } from '../hooks/useTrades'
 import { useFundContext } from '../context/FundContext'
 import { Card, EmptyState, PageHeader, Pill, Stat, formatCurrency } from '../components/ui'
+
+const HEATMAP_WEEKS = 18
+
+function colorForPnl(pnl, maxAbs) {
+  if (!pnl) return 'var(--surface-2)'
+  const pct = Math.round(Math.min(Math.abs(pnl) / maxAbs, 1) * 85) + 10
+  const base = pnl > 0 ? 'var(--accent)' : 'var(--red)'
+  return `color-mix(in srgb, ${base} ${pct}%, var(--surface-2))`
+}
+
+function PnlHeatmap({ closedTrades }) {
+  const { days, maxAbs } = useMemo(() => {
+    const end = new Date()
+    const start = startOfWeek(subWeeks(end, HEATMAP_WEEKS - 1))
+    const byDate = {}
+    for (const t of closedTrades) {
+      const key = format(new Date(t.exit_date), 'yyyy-MM-dd')
+      byDate[key] = (byDate[key] || 0) + Number(t.pnl || 0)
+    }
+    const days = eachDayOfInterval({ start, end }).map((date) => {
+      const key = format(date, 'yyyy-MM-dd')
+      return { date, key, pnl: key in byDate ? byDate[key] : null }
+    })
+    const maxAbs = Math.max(1, ...days.map((d) => Math.abs(d.pnl || 0)))
+    return { days, maxAbs }
+  }, [closedTrades])
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="grid gap-[3px] w-fit" style={{ gridTemplateRows: 'repeat(7, 1fr)', gridAutoFlow: 'column' }}>
+        {days.map((d) => (
+          <div
+            key={d.key}
+            title={`${format(d.date, 'dd MMM yyyy')} · ${d.pnl != null ? formatCurrency(d.pnl) : 'no closed trades'}`}
+            className="w-3 h-3 rounded-sm"
+            style={{ background: colorForPnl(d.pnl, maxAbs) }}
+          />
+        ))}
+      </div>
+      <div className="flex items-center gap-1.5 text-xs text-[var(--ink-faint)]">
+        <span>Loss</span>
+        <div className="w-3 h-3 rounded-sm" style={{ background: colorForPnl(-maxAbs, maxAbs) }} />
+        <div className="w-3 h-3 rounded-sm" style={{ background: 'var(--surface-2)' }} />
+        <div className="w-3 h-3 rounded-sm" style={{ background: colorForPnl(maxAbs, maxAbs) }} />
+        <span>Gain</span>
+      </div>
+    </div>
+  )
+}
 
 export function DashboardPage() {
   const { funds } = useFundContext()
@@ -84,6 +133,18 @@ export function DashboardPage() {
                 <Area type="monotone" dataKey="pnl" stroke="var(--accent)" strokeWidth={2} fill="url(#pnlFill)" />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-5">
+        <h2 className="font-display text-lg font-semibold mb-1">Daily P&amp;L activity</h2>
+        <p className="text-sm text-[var(--ink-muted)] mb-4">Last {HEATMAP_WEEKS} weeks, by trade close date, across every fund.</p>
+        {closedTrades.length === 0 ? (
+          <p className="text-sm text-[var(--ink-faint)]">Nothing to show yet — close a trade to light up the grid.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <PnlHeatmap closedTrades={closedTrades} />
           </div>
         )}
       </Card>

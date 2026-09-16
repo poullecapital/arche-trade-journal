@@ -8,6 +8,7 @@ import { JournalPage } from './pages/JournalPage'
 import { StrategiesPage } from './pages/StrategiesPage'
 import { FundsLedgerPage } from './pages/FundsLedgerPage'
 import { WatchlistPage } from './pages/WatchlistPage'
+import { ForecastPage } from './pages/ForecastPage'
 import { RelaxPage } from './pages/RelaxPage'
 import { SettingsPage } from './pages/SettingsPage'
 
@@ -31,6 +32,7 @@ function App() {
           <Route path="strategies" element={<StrategiesPage />} />
           <Route path="funds" element={<FundsLedgerPage />} />
           <Route path="watchlist" element={<WatchlistPage />} />
+          <Route path="forecast" element={<ForecastPage />} />
           <Route path="relax" element={<RelaxPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
