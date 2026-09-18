@@ -56,7 +56,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8 max-w-xl">
+    <div className="flex flex-col gap-6 max-w-xl">
       <PageHeader title="Settings" />
 
       <Card className="p-5 flex flex-col gap-4">

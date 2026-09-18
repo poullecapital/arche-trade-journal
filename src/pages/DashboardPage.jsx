@@ -89,7 +89,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <PageHeader eyebrow="Growth Intelligence" title="Dashboard" />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

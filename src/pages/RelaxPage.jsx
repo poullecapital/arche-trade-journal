@@ -5,7 +5,7 @@ import { Button, Card, PageHeader } from '../components/ui'
 
 export function RelaxPage() {
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <PageHeader eyebrow="Recovery" title="Relax" />
       <div className="grid md:grid-cols-3 gap-5">
         <Clock />

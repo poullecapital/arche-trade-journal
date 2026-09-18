@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 export function Card({ children, className = '', ...props }) {
   return (
     <div
-      className={`bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-[var(--shadow)] ${className}`}
+      className={`bg-[var(--surface)] border border-[var(--border)] rounded-md shadow-[var(--shadow)] ${className}`}
       {...props}
     >
       {children}
@@ -14,12 +14,12 @@ export function Card({ children, className = '', ...props }) {
 
 export function PageHeader({ eyebrow, title, action }) {
   return (
-    <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+    <div className="flex items-start justify-between gap-4 flex-wrap mb-5 pb-3 border-b border-[var(--border)]">
       <div>
         {eyebrow && (
-          <div className="font-mono text-[.7rem] uppercase tracking-[.12em] text-[var(--accent)] mb-1">{eyebrow}</div>
+          <div className="font-mono text-[.66rem] uppercase tracking-[.12em] text-[var(--accent)] mb-0.5">{eyebrow}</div>
         )}
-        <h1 className="font-display text-2xl md:text-3xl font-semibold text-[var(--ink)]">{title}</h1>
+        <h1 className="font-display text-xl text-[var(--ink)]">{title}</h1>
       </div>
       {action}
     </div>
@@ -30,10 +30,10 @@ export function Stat({ label, value, sub, tone = 'default' }) {
   const toneClass =
     tone === 'positive' ? 'text-[var(--accent)]' : tone === 'negative' ? 'text-[var(--red)]' : 'text-[var(--ink)]'
   return (
-    <Card className="p-4 flex flex-col gap-1">
-      <div className="text-xs text-[var(--ink-muted)] font-mono uppercase tracking-wide">{label}</div>
-      <div className={`tabular text-2xl font-semibold ${toneClass}`}>{value}</div>
-      {sub && <div className="text-xs text-[var(--ink-faint)]">{sub}</div>}
+    <Card className="p-3 flex flex-col gap-0.5">
+      <div className="text-[.68rem] text-[var(--ink-muted)] font-mono uppercase tracking-wide">{label}</div>
+      <div className={`tabular text-xl font-semibold ${toneClass}`}>{value}</div>
+      {sub && <div className="text-[.7rem] text-[var(--ink-faint)] font-mono">{sub}</div>}
     </Card>
   )
 }
@@ -46,17 +46,17 @@ export function Pill({ children, tone = 'default' }) {
     red: 'bg-[var(--red-soft)] text-[var(--red)]',
   }
   return (
-    <span className={`inline-flex items-center font-mono text-[.68rem] px-2 py-0.5 rounded-full ${toneMap[tone]}`}>
+    <span className={`inline-flex items-center font-mono text-[.66rem] uppercase tracking-wide px-1.5 py-0.5 rounded-sm ${toneMap[tone]}`}>
       {children}
     </span>
   )
 }
 
 export function Button({ children, variant = 'primary', className = '', ...props }) {
-  const base = 'inline-flex items-center justify-center gap-1.5 rounded-lg text-sm font-medium px-3.5 py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  const base = 'inline-flex items-center justify-center gap-1.5 rounded-sm text-sm font-medium px-3 py-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
   const variants = {
     primary: 'bg-[var(--accent)] text-[var(--accent-ink)] hover:opacity-90',
-    secondary: 'bg-[var(--surface-2)] text-[var(--ink)] hover:bg-[var(--border)]',
+    secondary: 'bg-[var(--surface-2)] text-[var(--ink)] border border-[var(--border)] hover:bg-[var(--border)]',
     ghost: 'text-[var(--ink-muted)] hover:text-[var(--ink)]',
     danger: 'bg-[var(--red-soft)] text-[var(--red)] hover:opacity-80',
   }
@@ -69,25 +69,25 @@ export function Button({ children, variant = 'primary', className = '', ...props
 
 export function EmptyState({ title, description, action }) {
   return (
-    <Card className="p-10 flex flex-col items-center text-center gap-2">
-      <div className="font-display text-lg text-[var(--ink)]">{title}</div>
+    <Card className="p-8 flex flex-col items-center text-center gap-2">
+      <div className="font-display text-base text-[var(--ink)]">{title}</div>
       <div className="text-sm text-[var(--ink-muted)] max-w-sm">{description}</div>
-      {action && <div className="mt-3">{action}</div>}
+      {action && <div className="mt-2">{action}</div>}
     </Card>
   )
 }
 
 export function Field({ label, children }) {
   return (
-    <label className="flex flex-col gap-1.5 text-sm">
-      <span className="text-[var(--ink-muted)] text-xs font-medium">{label}</span>
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="text-[var(--ink-muted)] text-[.7rem] font-mono uppercase tracking-wide">{label}</span>
       {children}
     </label>
   )
 }
 
 const inputClass =
-  'bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--ink)] placeholder:text-[var(--ink-faint)] w-full'
+  'bg-[var(--bg)] border border-[var(--border)] rounded-sm px-2.5 py-1.5 text-sm text-[var(--ink)] placeholder:text-[var(--ink-faint)] w-full'
 
 export function Input({ className = '', ...props }) {
   return <input className={`${inputClass} ${className}`} {...props} />
@@ -115,10 +115,10 @@ export function Modal({ open, onClose, title, children, wide }) {
 
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 py-10">
-      <Card className={`w-full ${wide ? 'max-w-2xl' : 'max-w-md'} p-6 relative`}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 py-10">
+      <Card className={`w-full ${wide ? 'max-w-2xl' : 'max-w-md'} p-5 relative`}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-lg font-semibold text-[var(--ink)]">{title}</h2>
+          <h2 className="font-display text-base text-[var(--ink)]">{title}</h2>
           <button onClick={onClose} className="text-[var(--ink-faint)] hover:text-[var(--ink)]">
             <X size={18} />
           </button>

@@ -30,6 +30,17 @@ export function useAccountBalances(fundId) {
   })
 }
 
+export function useAllAccountBalances() {
+  return useQuery({
+    queryKey: ['account_balances', 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('account_balances').select('*')
+      if (error) throw error
+      return data
+    },
+  })
+}
+
 export function useFundFlows(fundId) {
   return useQuery({
     queryKey: ['fund_flows', fundId],

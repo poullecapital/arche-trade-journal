@@ -3,14 +3,12 @@ import { createContext, useContext, useEffect, useState } from 'react'
 const ThemeContext = createContext(null)
 const STORAGE_KEY = 'arche-theme'
 
-function systemPrefersDark() {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-}
-
 export function ThemeProvider({ children }) {
+  // Defaults to dark regardless of system preference — a trading terminal
+  // opens dark, same as it always has, until you tell it otherwise.
   const [theme, setTheme] = useState(() => {
     if (typeof window === 'undefined') return 'dark'
-    return localStorage.getItem(STORAGE_KEY) || (systemPrefersDark() ? 'dark' : 'light')
+    return localStorage.getItem(STORAGE_KEY) || 'dark'
   })
 
   useEffect(() => {
