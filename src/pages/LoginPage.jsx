@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Button, Card, Field, Input } from '../components/ui'
+import { Button, Card, Field, Input, LogoMark } from '../components/ui'
 
 export function LoginPage() {
   const { signIn } = useAuth()
@@ -23,8 +23,9 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg)] p-4">
       <Card className="w-full max-w-sm p-6">
-        <div className="font-display text-xl mb-1">
-          Arch<span className="text-[var(--primary)]">e</span>
+        <div className="flex items-center gap-2.5 font-display text-xl mb-1">
+          <LogoMark className="w-8 h-8" />
+          Arche
         </div>
         <p className="text-sm text-[var(--ink-muted)] mb-5">Sign in to continue.</p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

@@ -2,36 +2,30 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #eceffb;
-  --bg-mesh:
-    radial-gradient(60rem 40rem at 8% 0%, #c3d2ff 0%, transparent 60%),
-    radial-gradient(50rem 36rem at 100% 0%, #e6c6ff 0%, transparent 58%),
-    radial-gradient(56rem 40rem at 85% 100%, #b8efdc 0%, transparent 60%),
-    radial-gradient(40rem 30rem at 0% 100%, #ffd4bb 0%, transparent 60%);
-  --surface: rgba(255, 255, 255, 0.72);
+  --bg: #f3f4f8;
+  --bg-mesh: linear-gradient(180deg, #eceefa 0%, #f3f4f8 22rem);
+  --surface: #ffffff;
   --surface-solid: #ffffff;
-  --surface-2: #eceffa;
-  --surface-edge: rgba(255, 255, 255, 0.95);
-  --ink: #1a1d3a;
-  --ink-muted: #555a7c;
-  --ink-faint: #9298b6;
-  --border: rgba(120, 130, 190, 0.18);
-  --primary: #5b5ce6;
-  --primary-hi: #7b7cf5;
-  --primary-lo: #4344c8;
+  --surface-2: #f1f2f7;
+  --surface-edge: #e3e5ee;
+  --ink: #111427;
+  --ink-muted: #4a4f68;
+  --ink-faint: #6e7390;
+  --border: #e3e5ee;
+  --primary: #4f46e5;
+  --primary-hi: #6660f0;
+  --primary-lo: #4038cc;
   --primary-ink: #ffffff;
-  --accent: #0b9b6b;
-  --accent-soft: #d9f4e9;
-  --amber: #b45f06;
-  --amber-soft: #fdecc8;
-  --red: #dc3b4a;
-  --red-soft: #fde1e4;
-  --shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 4px rgba(60, 70, 130, 0.06),
-    0 14px 30px -10px rgba(60, 70, 130, 0.22), 0 34px 60px -34px rgba(91, 92, 230, 0.3);
-  --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(60, 70, 130, 0.1), 0 6px 14px -6px rgba(60, 70, 130, 0.25);
-  --shadow-inset: inset 0 2px 5px rgba(60, 70, 130, 0.14), inset 0 -1px 0 rgba(255, 255, 255, 0.9);
-  --btn-glow: 0 8px 18px -6px rgba(91, 92, 230, 0.65);
+  --accent: #047857;
+  --accent-soft: #dcf5ea;
+  --amber: #a15c07;
+  --amber-soft: #fcefd2;
+  --red: #d42a3a;
+  --red-soft: #fde4e6;
+  --shadow: 0 1px 2px rgba(17, 20, 39, 0.05), 0 4px 12px -4px rgba(17, 20, 39, 0.07);
+  --shadow-sm: 0 1px 2px rgba(17, 20, 39, 0.07), 0 2px 6px -2px rgba(17, 20, 39, 0.08);
+  --shadow-inset: inset 0 1px 2px rgba(17, 20, 39, 0.08);
+  --btn-glow: 0 4px 10px -4px rgba(79, 70, 229, 0.55);
   color-scheme: light;
 }
 
@@ -147,7 +141,7 @@ body {
 /* Pressed-in surface (inputs, tab track) */
 .inset {
   background: var(--surface-2);
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
   box-shadow: var(--shadow-inset);
 }
 

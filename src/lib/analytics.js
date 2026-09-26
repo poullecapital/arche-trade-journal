@@ -1,4 +1,5 @@
 import { format } from 'date-fns'
+import { instrumentName } from './instruments'
 
 // Mistake / emotion tags share the trades.tags column, told apart by prefix.
 export const MISTAKES = [
@@ -134,6 +135,7 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export const byStrategy = (trades) => groupTrades(trades, (t) => t.strategy?.name ?? 'No strategy')
 export const bySymbol = (trades) => groupTrades(trades, (t) => t.symbol)
+export const byInstrument = (trades) => groupTrades(trades, (t) => instrumentName(t.instrument_type))
 export const byFreeTag = (trades) => groupTrades(trades, (t) => splitTags(t.tags).free)
 export const byMistake = (trades) => groupTrades(trades, (t) => splitTags(t.tags).mistakes)
 export const byEmotion = (trades) => groupTrades(trades, (t) => splitTags(t.tags).emotions)

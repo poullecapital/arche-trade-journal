@@ -1,16 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 
+// A null fundId means every fund.
 export function useWatchlist(fundId) {
   return useQuery({
-    queryKey: ['watchlist', fundId],
-    enabled: !!fundId,
+    queryKey: ['watchlist', fundId ?? 'every-fund'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('watchlist_items')
-        .select('*')
-        .eq('fund_id', fundId)
+        .select('*, fund:funds(id, name)')
         .order('created_at', { ascending: false })
+      if (fundId) query = query.eq('fund_id', fundId)
+      const { data, error } = await query
       if (error) throw error
       return data
     },

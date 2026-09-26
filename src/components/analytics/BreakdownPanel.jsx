@@ -1,12 +1,13 @@
 import { useMemo } from 'react'
 import { Card, EmptyState } from '../ui'
 import { BarList } from './BarList'
-import { byFreeTag, bySymbol, byStrategy, byWeekday, closedTradesOf } from '../../lib/analytics'
+import { byFreeTag, byInstrument, bySymbol, byStrategy, byWeekday, closedTradesOf } from '../../lib/analytics'
 
 export function BreakdownPanel({ trades, currency }) {
   const data = useMemo(
     () => ({
       strategy: byStrategy(trades),
+      instrument: byInstrument(trades),
       symbol: bySymbol(trades).slice(0, 8),
       weekday: byWeekday(trades),
       tags: byFreeTag(trades).slice(0, 8),
@@ -15,11 +16,12 @@ export function BreakdownPanel({ trades, currency }) {
   )
 
   if (closedTradesOf(trades).length === 0) {
-    return <EmptyState title="No closed trades yet" description="Breakdowns by strategy, symbol, weekday and tag appear once you close trades." />
+    return <EmptyState title="No closed trades yet" description="Breakdowns by strategy, instrument, symbol, weekday and tag appear once you close trades." />
   }
 
   const sections = [
     { title: 'By strategy', rows: data.strategy, empty: 'No strategies tagged yet.' },
+    { title: 'By instrument', rows: data.instrument, empty: 'No trades yet.' },
     { title: 'By symbol', rows: data.symbol, empty: 'No symbols yet.' },
     { title: 'By weekday (entry day)', rows: data.weekday.filter((d) => d.count > 0), empty: 'No trades yet.' },
     { title: 'By tag', rows: data.tags, empty: 'Add tags to your trades to compare setups.' },

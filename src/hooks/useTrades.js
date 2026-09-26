@@ -1,16 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 
+// A null fundId means every fund.
 export function useTrades(fundId, filters = {}) {
   return useQuery({
-    queryKey: ['trades', fundId, filters],
-    enabled: !!fundId,
+    queryKey: ['trades', fundId ?? 'every-fund', filters],
     queryFn: async () => {
       let query = supabase
         .from('trades')
-        .select('*, strategy:strategies(id, name)')
-        .eq('fund_id', fundId)
+        .select('*, fund:funds(id, name, currency), strategy:strategies(id, name)')
         .order('entry_date', { ascending: false })
+      if (fundId) query = query.eq('fund_id', fundId)
       if (filters.status) query = query.eq('status', filters.status)
       if (filters.strategyId) query = query.eq('strategy_id', filters.strategyId)
       if (filters.symbol) query = query.ilike('symbol', `%${filters.symbol}%`)
@@ -62,6 +62,12 @@ export function useOpenTrade() {
         p_rule_results: trade.ruleResults || [],
       })
       if (error) throw error
+      // Contract details don't touch the ledger, so they're set after the RPC
+      // rather than widening its signature.
+      if (trade.instrument && trade.instrument.instrument_type !== 'equity') {
+        const { error: detailError } = await supabase.from('trades').update(trade.instrument).eq('id', data)
+        if (detailError) throw detailError
+      }
       return data
     },
     onSuccess: () => invalidateTradeQueries(queryClient),

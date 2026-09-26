@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { Plus, ArrowDownToLine, ArrowUpFromLine, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { format } from 'date-fns'
 import { useFundContext } from '../context/FundContext'
+import { OpenPositions } from '../components/OpenPositions'
+import { useAllTrades } from '../hooks/useTrades'
 import { useCreateFund, useFundSummaries, useUpdateFundStatus } from '../hooks/useFunds'
 import {
   useAccountBalances,
@@ -29,6 +31,7 @@ import {
 
 const PAGE_TABS = [
   { id: 'funds', label: 'Funds' },
+  { id: 'positions', label: 'Positions' },
   { id: 'balance', label: 'Balance sheet' },
   { id: 'books', label: 'Books' },
 ]
@@ -44,8 +47,8 @@ export function FundsLedgerPage() {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Ledger"
-        subtitle="Funds, capital and the books behind every number"
+        title="Funds & ledger"
+        subtitle="Capital, holdings and the books behind every number"
         action={
           <Button onClick={() => setNewFundOpen(true)}>
             <Plus size={15} /> New fund
@@ -57,6 +60,7 @@ export function FundsLedgerPage() {
       {tab === 'funds' && (
         <FundTable funds={funds} summaries={summaries} selectedFundId={selectedFundId} onSelect={setSelectedFundId} />
       )}
+      {tab === 'positions' && <PositionsTab />}
       {tab === 'balance' && <BalanceSheet />}
       {tab === 'books' &&
         (selectedFund ? (
@@ -66,7 +70,7 @@ export function FundsLedgerPage() {
             onWithdraw={() => setFlowOpen('withdrawal')}
           />
         ) : (
-          <EmptyState title="No fund selected" description="Create or pick a fund to see its books." />
+          <EmptyState title="Pick a fund" description="Choose a fund in the Funds tab or the top bar to see its books." />
         ))}
 
       <NewFundModal
@@ -79,6 +83,13 @@ export function FundsLedgerPage() {
       {selectedFund && <FundFlowModal type={flowOpen} fund={selectedFund} onClose={() => setFlowOpen(null)} />}
     </div>
   )
+}
+
+function PositionsTab() {
+  const { selectedFund, inScope } = useFundContext()
+  const { data: trades = [] } = useAllTrades()
+  const open = trades.filter((t) => t.status === 'open' && inScope(t.fund_id))
+  return <OpenPositions trades={open} showFund={!selectedFund} currency={selectedFund?.currency} />
 }
 
 function BalanceSheet() {

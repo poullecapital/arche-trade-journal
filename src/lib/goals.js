@@ -1,54 +1,57 @@
 import { format } from 'date-fns'
 import { dailyPnl } from './analytics'
 
-const STORAGE_KEY = 'arche-goals'
-const EVENT = 'arche-goals-changed'
-
-export const DEFAULT_GOALS = { monthlyTarget: '', maxDailyLoss: '', maxTradesPerDay: '' }
-
-let cachedRaw = null
-let cachedValue = DEFAULT_GOALS
-
-export function readGoals() {
-  let raw = null
-  try {
-    raw = localStorage.getItem(STORAGE_KEY)
-  } catch {
-    // storage unavailable — fall back to defaults
-  }
-  if (raw !== cachedRaw) {
-    cachedRaw = raw
-    try {
-      cachedValue = raw ? { ...DEFAULT_GOALS, ...JSON.parse(raw) } : DEFAULT_GOALS
-    } catch {
-      cachedValue = DEFAULT_GOALS
-    }
-  }
-  return cachedValue
-}
-
-export function saveGoals(goals) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(goals))
-  } catch {
-    // storage unavailable — goals just won't persist
-  }
-  window.dispatchEvent(new Event(EVENT))
-}
-
-export function subscribeGoals(callback) {
-  window.addEventListener(EVENT, callback)
-  window.addEventListener('storage', callback)
-  return () => {
-    window.removeEventListener(EVENT, callback)
-    window.removeEventListener('storage', callback)
-  }
-}
+// Goals and risk limits as form values: numbers are strings, '' means off.
+export const DEFAULT_GOALS = { monthlyTarget: '', maxDailyLoss: '', maxTradesPerDay: '', maxRiskPct: '', requireStop: false }
 
 const num = (v) => (v === '' || v == null || Number.isNaN(Number(v)) ? null : Number(v))
+const str = (v) => (v == null ? '' : String(v))
+
+// trading_rules row <-> form values.
+export function goalsFromRow(row) {
+  if (!row) return DEFAULT_GOALS
+  return {
+    monthlyTarget: str(row.monthly_target),
+    maxDailyLoss: str(row.max_daily_loss),
+    maxTradesPerDay: str(row.max_trades_per_day),
+    maxRiskPct: str(row.max_risk_pct),
+    requireStop: !!row.require_stop,
+  }
+}
+
+export function goalsToRow(goals) {
+  return {
+    id: true,
+    monthly_target: num(goals.monthlyTarget),
+    max_daily_loss: num(goals.maxDailyLoss),
+    max_trades_per_day: num(goals.maxTradesPerDay),
+    max_risk_pct: num(goals.maxRiskPct),
+    require_stop: !!goals.requireStop,
+  }
+}
+
+// Goals used to live in this browser's storage; read them once so they can be
+// moved into the database, then forget them.
+const LEGACY_KEY = 'arche-goals'
+export function takeLegacyGoals() {
+  try {
+    const raw = localStorage.getItem(LEGACY_KEY)
+    if (!raw) return null
+    localStorage.removeItem(LEGACY_KEY)
+    return { ...DEFAULT_GOALS, ...JSON.parse(raw) }
+  } catch {
+    return null
+  }
+}
 
 export function hasGoals(goals) {
-  return num(goals.monthlyTarget) != null || num(goals.maxDailyLoss) != null || num(goals.maxTradesPerDay) != null
+  return (
+    num(goals.monthlyTarget) != null ||
+    num(goals.maxDailyLoss) != null ||
+    num(goals.maxTradesPerDay) != null ||
+    num(goals.maxRiskPct) != null ||
+    goals.requireStop
+  )
 }
 
 // Progress against the goals for `now`, across the given trades.
@@ -81,4 +84,29 @@ export function goalStatus(trades, goals, now = new Date()) {
   }
 
   return { monthPnl, todayPnl, tradesToday, target, maxLoss, maxTrades, breaches }
+}
+
+// Money lost if the trade hits its stop, or null without a usable stop.
+export function riskToStop({ direction, entryPrice, stopLoss, quantity }) {
+  if (stopLoss == null || !(entryPrice > 0) || !(quantity > 0)) return null
+  const perUnit = direction === 'short' ? stopLoss - entryPrice : entryPrice - stopLoss
+  return Math.max(perUnit, 0) * quantity
+}
+
+// Warnings for a trade about to be logged, checked against the risk rules.
+// `nav` is the fund's current value (cash + holdings), when known.
+export function tradeRiskWarnings(trade, goals, nav) {
+  const warnings = []
+  const hasStop = trade.stopLoss != null
+  if (goals.requireStop && !hasStop) warnings.push('Your rules require a stop-loss on every trade.')
+  if (hasStop && trade.entryPrice > 0) {
+    const wrongSide = trade.direction === 'short' ? trade.stopLoss <= trade.entryPrice : trade.stopLoss >= trade.entryPrice
+    if (wrongSide) warnings.push(`The stop is on the wrong side of the entry for a ${trade.direction} trade.`)
+  }
+  const maxRisk = num(goals.maxRiskPct)
+  const risk = riskToStop(trade)
+  if (maxRisk != null && risk != null && nav > 0 && (risk / nav) * 100 > maxRisk) {
+    warnings.push(`This risks ${((risk / nav) * 100).toFixed(2)}% of the fund, over your ${maxRisk}% per-trade limit.`)
+  }
+  return warnings
 }

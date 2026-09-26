@@ -1,12 +1,11 @@
 import { Outlet, useNavigate } from 'react-router-dom'
-import { Calculator, LogOut, Moon, Plus, Search, Sun } from 'lucide-react'
+import { Calculator, Leaf, LogOut, Moon, Plus, Search, Sun } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
 import { useAuth } from '../../context/AuthContext'
-import { useFundContext } from '../../context/FundContext'
+import { ALL_FUNDS, useFundContext } from '../../context/FundContext'
 import { UtilityProvider, useUtilities } from '../../context/UtilityContext'
-import { Button } from '../ui'
+import { Button, Select } from '../ui'
 import { Sidebar } from './Sidebar'
-import { Select } from '../ui'
 
 function greeting() {
   const h = new Date().getHours()
@@ -19,13 +18,13 @@ const iconButton =
 function Topbar() {
   const { theme, toggleTheme } = useTheme()
   const { signOut } = useAuth()
-  const { funds, selectedFundId, setSelectedFundId } = useFundContext()
-  const { openPalette, openCalculator } = useUtilities()
+  const { funds, scope, setScope } = useFundContext()
+  const { openPalette, openCalculator, openBreak } = useUtilities()
   const navigate = useNavigate()
 
   return (
     <header className="no-print flex items-center justify-between gap-3">
-      <div className="text-sm text-[var(--ink-muted)]">
+      <div className="hidden sm:block text-sm text-[var(--ink-muted)]">
         {greeting()}, <span className="font-medium text-[var(--ink)]">Kathir</span>
       </div>
       <div className="flex items-center gap-2">
@@ -43,16 +42,21 @@ function Topbar() {
         <button onClick={openCalculator} className={iconButton} title="Position size calculator">
           <Calculator size={16} />
         </button>
+        <button onClick={openBreak} className={iconButton} title="Take a break">
+          <Leaf size={16} />
+        </button>
         <Button onClick={() => navigate('/journal?new=1')} className="!h-10 !px-4">
           <Plus size={16} /> <span className="hidden sm:inline">Log trade</span>
         </Button>
         {funds.length > 0 && (
           <Select
-            aria-label="Active fund"
-            value={selectedFundId ?? ''}
-            onChange={(e) => setSelectedFundId(e.target.value)}
+            aria-label="Fund scope"
+            title="Every page shows this fund, or all of them"
+            value={scope}
+            onChange={(e) => setScope(e.target.value)}
             className="!w-auto raised !shadow-[var(--shadow-sm)] !rounded-full !bg-[var(--surface-solid)] !px-4 !h-10 font-medium"
           >
+            <option value={ALL_FUNDS}>All funds</option>
             {funds.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.name}
@@ -60,12 +64,15 @@ function Topbar() {
             ))}
           </Select>
         )}
-        <button onClick={toggleTheme} className={iconButton} title="Toggle theme">
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-        <button onClick={signOut} className={iconButton} title="Sign out">
-          <LogOut size={16} />
-        </button>
+        {/* On phones these live in the ⌘K palette to keep the bar on one line. */}
+        <div className="hidden sm:flex items-center gap-2">
+          <button onClick={toggleTheme} className={iconButton} title="Toggle theme">
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          <button onClick={signOut} className={iconButton} title="Sign out">
+            <LogOut size={16} />
+          </button>
+        </div>
       </div>
     </header>
   )

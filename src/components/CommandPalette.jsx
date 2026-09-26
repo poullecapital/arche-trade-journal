@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BarChart3, BookOpen, Calculator, CornerDownLeft, Eye, Landmark, LayoutGrid, Leaf, LogOut, Moon, Plus, Search, Settings, Target, TrendingUp } from 'lucide-react'
+import { BarChart3, BookOpen, Calculator, ClipboardCheck, NotebookPen, CornerDownLeft, Eye, Landmark, Leaf, LogOut, Moon, Plus, Search, Settings, Sun, Target, TrendingUp } from 'lucide-react'
 import { Card } from './ui'
 import { useAllTrades } from '../hooks/useTrades'
 import { useFundContext } from '../context/FundContext'
@@ -9,18 +9,19 @@ import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 
 const PAGES = [
-  { label: 'Overview', to: '/', icon: LayoutGrid },
-  { label: 'Journal', to: '/journal', icon: BookOpen },
-  { label: 'Analytics', to: '/analytics', icon: BarChart3, keywords: 'stats performance calendar report' },
-  { label: 'Ledger', to: '/funds', icon: Landmark, keywords: 'funds balance sheet books' },
-  { label: 'Watchlist', to: '/watchlist', icon: Eye, keywords: 'holdings' },
+  { label: 'Today', to: '/', icon: Sun, keywords: 'home overview dashboard plan review positions' },
+  { label: 'Trades', to: '/journal', icon: BookOpen, keywords: 'journal filter' },
+  { label: 'Daily journal', to: '/journal/daily', icon: NotebookPen, keywords: 'plan review lessons diary' },
+  { label: 'Review queue', to: '/journal/review', icon: ClipboardCheck, keywords: 'unreviewed grade' },
+  { label: 'Analytics', to: '/analytics', icon: BarChart3, keywords: 'stats performance calendar report mistakes' },
+  { label: 'Forecast', to: '/analytics?tab=forecast', icon: TrendingUp, keywords: 'monte carlo projection' },
   { label: 'Strategies', to: '/strategies', icon: Target, keywords: 'rules playbook' },
-  { label: 'Forecast', to: '/forecast', icon: TrendingUp, keywords: 'monte carlo projection' },
-  { label: 'Relax', to: '/relax', icon: Leaf, keywords: 'timer breathing notes' },
+  { label: 'Watchlist', to: '/watchlist', icon: Eye, keywords: 'ideas setups' },
+  { label: 'Funds & ledger', to: '/funds', icon: Landmark, keywords: 'funds holdings balance sheet books deposit withdraw' },
   { label: 'Settings', to: '/settings', icon: Settings, keywords: 'import export csv' },
 ]
 
-export function CommandPalette({ open, onClose, onCalculator }) {
+export function CommandPalette({ open, onClose, onCalculator, onBreak }) {
   const navigate = useNavigate()
   const { selectedFundId } = useFundContext()
   const { data: trades = [] } = useAllTrades()
@@ -46,6 +47,7 @@ export function CommandPalette({ open, onClose, onCalculator }) {
     const actions = [
       { label: 'Log a trade', icon: Plus, run: go('/journal?new=1'), keywords: 'add new open entry' },
       { label: 'Position size calculator', icon: Calculator, run: onCalculator, keywords: 'risk quantity sizing' },
+      { label: 'Take a break', icon: Leaf, run: onBreak, keywords: 'relax breathe timer focus ambient' },
       { label: 'New fund', icon: Landmark, run: go('/funds?new=1'), keywords: 'create' },
       { label: 'New strategy', icon: Target, run: go('/strategies?new=1'), keywords: 'create rules' },
       { label: 'Toggle light / dark theme', icon: Moon, run: toggleTheme, keywords: 'appearance' },
@@ -65,14 +67,14 @@ export function CommandPalette({ open, onClose, onCalculator }) {
       { title: 'Symbols', items: symbols },
       { title: 'Strategies', items: strategies.map((s) => ({ label: s.name, hint: 'Strategy', icon: Target, run: go('/strategies') })) },
     ]
-  }, [navigate, onCalculator, toggleTheme, signOut, trades, strategies])
+  }, [navigate, onCalculator, onBreak, toggleTheme, signOut, trades, strategies])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return groups
       .map((g) => ({
         title: g.title,
-        items: g.items.filter((it) => !q || `${it.label} ${it.keywords ?? ''}`.toLowerCase().includes(q)).slice(0, q ? 8 : g.title === 'Pages' ? 9 : 6),
+        items: g.items.filter((it) => !q || `${it.label} ${it.keywords ?? ''}`.toLowerCase().includes(q)).slice(0, q ? 8 : g.title === 'Pages' ? PAGES.length : 7),
       }))
       .filter((g) => g.items.length > 0 && (q || g.title === 'Pages' || g.title === 'Actions'))
   }, [groups, query])
