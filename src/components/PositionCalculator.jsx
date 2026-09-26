@@ -4,6 +4,7 @@ import { Calculator } from 'lucide-react'
 import { Button, Field, Input, Modal, formatCurrency, formatNumber } from './ui'
 import { useFundContext } from '../context/FundContext'
 import { useFundSummaries } from '../hooks/useFunds'
+import { useGoals } from '../hooks/useGoals'
 
 const num = (v) => (v === '' ? NaN : Number(v))
 
@@ -27,7 +28,10 @@ export function PositionCalculator({ open, onClose }) {
 
   const [symbol, setSymbol] = useState('')
   const [capitalInput, setCapitalInput] = useState('')
-  const [riskPct, setRiskPct] = useState('1')
+  const [goals] = useGoals()
+  // Until edited, risk per trade follows the limit in Goals & risk limits.
+  const [riskInput, setRiskPct] = useState(null)
+  const riskPct = riskInput ?? (goals.maxRiskPct || '1')
   const [entry, setEntry] = useState('')
   const [stop, setStop] = useState('')
   const [target, setTarget] = useState('')

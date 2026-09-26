@@ -64,12 +64,18 @@ export function GoalsCard() {
   }
 
   const { monthPnl, todayPnl, tradesToday, target, maxLoss, maxTrades, breaches } = status
+  const riskRules = [goals.maxRiskPct !== '' && `Max ${goals.maxRiskPct}% risk per trade`, goals.requireStop && 'Stop-loss required']
+    .filter(Boolean)
+    .join(' · ')
 
   return (
     <>
       <Card className="p-5 flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-base">Goals &amp; limits</h2>
+          <div>
+            <h2 className="font-display text-base">Goals &amp; limits</h2>
+            {riskRules && <div className="text-xs text-[var(--ink-faint)] mt-0.5">{riskRules}</div>}
+          </div>
           <Button variant="ghost" onClick={() => setEditing(true)}>
             Edit
           </Button>
@@ -139,7 +145,7 @@ function GoalsModal({ open, onClose }) {
     <Modal open={open} onClose={onClose} title="Goals & risk limits">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <p className="text-sm text-[var(--ink-muted)]">
-          Applies across all funds. Leave a field empty to switch it off. Saved on this device.
+          Applies across all funds and every device. Leave a field empty to switch it off.
         </p>
         <Field label="Monthly profit target">
           <Input type="number" min="0" step="any" value={draft.monthlyTarget} onChange={set('monthlyTarget')} placeholder="e.g. 25000" />
@@ -150,6 +156,13 @@ function GoalsModal({ open, onClose }) {
         <Field label="Max trades per day">
           <Input type="number" min="1" step="1" value={draft.maxTradesPerDay} onChange={set('maxTradesPerDay')} placeholder="e.g. 3" />
         </Field>
+        <Field label="Max risk per trade (% of the fund's value)">
+          <Input type="number" min="0.01" max="100" step="any" value={draft.maxRiskPct} onChange={set('maxRiskPct')} placeholder="e.g. 1" />
+        </Field>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={draft.requireStop} onChange={(e) => setDraft({ ...draft, requireStop: e.target.checked })} />
+          Require a stop-loss on every trade
+        </label>
         <div className="flex gap-2">
           <Button type="submit" className="flex-1">
             Save goals

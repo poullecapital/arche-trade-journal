@@ -1,34 +1,55 @@
 import { useEffect, useRef, useState } from 'react'
-import { Pause, Play, Plus, RotateCcw, Trash2, Volume2, VolumeX } from 'lucide-react'
-import { useCreateStickyNote, useDeleteStickyNote, useStickyNotes, useUpdateStickyNote } from '../hooks/useStickyNotes'
-import { Button, Card, PageHeader, Tabs } from '../components/ui'
+import { Pause, Play, RotateCcw, Volume2, VolumeX, X } from 'lucide-react'
+import { Button, Card, Tabs } from './ui'
 
 const TABS = [
-  { id: 'focus', label: 'Focus' },
+  { id: 'focus', label: 'Breathe' },
   { id: 'unwind', label: 'Unwind' },
-  { id: 'notes', label: 'Notes' },
 ]
 
-export function RelaxPage() {
+// Slide-over for a short break between trades. It stays mounted while closed
+// so a running focus timer or ambient sound carries on in the background.
+export function BreakDrawer({ open, onClose }) {
   const [tab, setTab] = useState('focus')
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
   return (
-    <div className="flex flex-col gap-5">
-      <PageHeader title="Relax" subtitle="Step away from the screen for a minute" />
-      <Tabs tabs={TABS} value={tab} onChange={setTab} />
-      {tab === 'focus' && (
-        <div className="grid md:grid-cols-3 gap-4">
-          <Clock />
-          <FocusTimer />
-          <BreathingGuide />
+    <div className={`no-print fixed inset-0 z-50 ${open ? '' : 'pointer-events-none'}`} aria-hidden={!open}>
+      <div
+        onClick={onClose}
+        className={`absolute inset-0 bg-[#0b0e2a]/40 backdrop-blur-sm transition-opacity ${open ? 'opacity-100' : 'opacity-0'}`}
+      />
+      <aside
+        className={`absolute top-0 right-0 h-full w-full max-w-md overflow-y-auto p-4 flex flex-col gap-4 bg-[var(--bg)] shadow-2xl transition-transform duration-300 ${
+          open ? 'translate-x-0' : 'translate-x-full invisible'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-lg">Take a break</h2>
+            <p className="text-sm text-[var(--ink-muted)]">Step away from the screen for a minute</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-full text-[var(--ink-faint)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]">
+            <X size={18} />
+          </button>
         </div>
-      )}
-      {tab === 'unwind' && (
-        <>
+        <Tabs tabs={TABS} value={tab} onChange={setTab} />
+        <div className={tab === 'focus' ? 'flex flex-col gap-4' : 'hidden'}>
+          <Clock />
+          <BreathingGuide />
+          <FocusTimer />
+        </div>
+        <div className={tab === 'unwind' ? 'flex flex-col gap-4' : 'hidden'}>
           <AmbientPlayer />
           <BubbleWrap />
-        </>
-      )}
-      {tab === 'notes' && <StickyNotes />}
+        </div>
+      </aside>
     </div>
   )
 }
@@ -328,62 +349,5 @@ function AmbientPlayer() {
       </div>
       <p className="text-xs text-[var(--ink-faint)]">Generated locally — no audio files, nothing to license.</p>
     </Card>
-  )
-}
-
-const COLORS = ['amber', 'accent', 'red', 'default']
-
-function StickyNotes() {
-  const { data: notes = [] } = useStickyNotes()
-  const create = useCreateStickyNote()
-  const update = useUpdateStickyNote()
-  const remove = useDeleteStickyNote()
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-display text-base">Sticky notes</h2>
-        <Button
-          variant="secondary"
-          onClick={() => create.mutate({ content: '', color: COLORS[notes.length % COLORS.length] })}
-        >
-          <Plus size={15} /> New note
-        </Button>
-      </div>
-      {notes.length === 0 ? (
-        <p className="text-sm text-[var(--ink-faint)]">Jot something down — reminders, ideas, anything off the books.</p>
-      ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {notes.map((note) => (
-            <StickyNote key={note.id} note={note} onSave={(content) => update.mutate({ id: note.id, content })} onDelete={() => remove.mutate(note.id)} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function StickyNote({ note, onSave, onDelete }) {
-  const [content, setContent] = useState(note.content)
-  const toneMap = {
-    amber: 'bg-[var(--amber-soft)]',
-    accent: 'bg-[var(--accent-soft)]',
-    red: 'bg-[var(--red-soft)]',
-    default: 'bg-[var(--surface-2)]',
-  }
-  return (
-    <div className={`rounded-xl p-4 flex flex-col gap-2 ${toneMap[note.color] || toneMap.default}`}>
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        onBlur={() => onSave(content)}
-        rows={4}
-        placeholder="Write something…"
-        className="bg-transparent resize-none outline-none text-sm text-[var(--ink)] placeholder:text-[var(--ink-faint)]"
-      />
-      <button onClick={onDelete} className="self-end text-[var(--ink-faint)] hover:text-[var(--red)]">
-        <Trash2 size={13} />
-      </button>
-    </div>
   )
 }

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { format } from 'date-fns'
 import { Button, Field, Input, Select, formatCurrency, formatNumber } from '../ui'
 import { EMOTIONS, MISTAKES, tagKey } from '../../lib/analytics'
-import { useAddToTrade, useAmendTrade, usePartialClose } from '../../hooks/useTrades'
+import { useAddToTrade, useAmendTrade, usePartialClose, useUpdateTrade } from '../../hooks/useTrades'
+import { INSTRUMENTS, instrumentColumns, usesLots } from '../../lib/instruments'
 
 const toLocalInput = (iso) => format(new Date(iso), "yyyy-MM-dd'T'HH:mm")
 const optionalNumber = (v) => (v === '' || v == null ? null : Number(v))
@@ -57,8 +58,14 @@ function FormError({ error }) {
 
 export function AmendForm({ trade, fund, strategies, onDone }) {
   const amend = useAmendTrade()
+  const updateTrade = useUpdateTrade()
   const closed = trade.status === 'closed'
   const [f, setF] = useState({
+    instrumentType: trade.instrument_type ?? 'equity',
+    expiry: trade.expiry ?? '',
+    strike: trade.strike != null ? String(trade.strike) : '',
+    optionType: trade.option_type ?? 'CE',
+    lotSize: trade.lot_size != null ? String(trade.lot_size) : '',
     symbol: trade.symbol,
     direction: trade.direction,
     strategyId: trade.strategy_id ?? '',
@@ -91,6 +98,8 @@ export function AmendForm({ trade, fund, strategies, onDone }) {
       exitDate: closed ? new Date(f.exitDate).toISOString() : null,
       exitFees: closed ? Number(f.exitFees || 0) : 0,
     })
+    // Contract details sit outside the ledger, so they're saved separately.
+    await updateTrade.mutateAsync({ id: trade.id, ...instrumentColumns(f) })
     onDone()
   }
 
@@ -99,6 +108,40 @@ export function AmendForm({ trade, fund, strategies, onDone }) {
       <p className="text-xs text-[var(--ink-muted)]">
         Saving rebuilds this trade&apos;s ledger entries in {fund.name}, so P&amp;L and the balance sheet stay correct.
       </p>
+      <div className="grid sm:grid-cols-4 gap-3">
+        <Field label="Instrument">
+          <Select value={f.instrumentType} onChange={set('instrumentType')}>
+            {INSTRUMENTS.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        {usesLots(f.instrumentType) && (
+          <>
+            <Field label="Expiry">
+              <Input type="date" required value={f.expiry} onChange={set('expiry')} />
+            </Field>
+            <Field label="Lot size">
+              <Input type="number" step="any" min="0" value={f.lotSize} onChange={set('lotSize')} />
+            </Field>
+          </>
+        )}
+        {f.instrumentType === 'option' && (
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Strike">
+              <Input type="number" step="any" min="0" required value={f.strike} onChange={set('strike')} />
+            </Field>
+            <Field label="CE / PE">
+              <Select value={f.optionType} onChange={set('optionType')}>
+                <option value="CE">CE</option>
+                <option value="PE">PE</option>
+              </Select>
+            </Field>
+          </div>
+        )}
+      </div>
       <div className="grid sm:grid-cols-3 gap-3">
         <Field label="Symbol">
           <Input required value={f.symbol} onChange={(e) => setF({ ...f, symbol: e.target.value.toUpperCase() })} />
@@ -154,7 +197,7 @@ export function AmendForm({ trade, fund, strategies, onDone }) {
       <FormError error={amend.error} />
       <div className="flex gap-2">
         <Button type="submit" disabled={amend.isPending}>
-          {amend.isPending ? 'Saving…' : 'Save changes'}
+          {amend.isPending || updateTrade.isPending ? 'Saving…' : 'Save changes'}
         </Button>
         <Button type="button" variant="ghost" onClick={onDone}>
           Cancel

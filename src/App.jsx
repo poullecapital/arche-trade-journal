@@ -3,14 +3,14 @@ import { FundProvider } from './context/FundContext'
 import { useAuth } from './context/AuthContext'
 import { LoginPage } from './pages/LoginPage'
 import { AppShell } from './components/layout/AppShell'
-import { DashboardPage } from './pages/DashboardPage'
+import { TodayPage } from './pages/TodayPage'
 import { JournalPage } from './pages/JournalPage'
+import { DailyJournalPage } from './pages/DailyJournalPage'
+import { ReviewQueuePage } from './pages/ReviewQueuePage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { StrategiesPage } from './pages/StrategiesPage'
 import { FundsLedgerPage } from './pages/FundsLedgerPage'
 import { WatchlistPage } from './pages/WatchlistPage'
-import { ForecastPage } from './pages/ForecastPage'
-import { RelaxPage } from './pages/RelaxPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 function App() {
@@ -21,14 +21,17 @@ function App() {
     <FundProvider>
       <Routes>
         <Route element={<AppShell />}>
-          <Route index element={<DashboardPage />} />
+          <Route index element={<TodayPage />} />
           <Route path="journal" element={<JournalPage />} />
+          <Route path="journal/daily" element={<DailyJournalPage />} />
+          <Route path="journal/review" element={<ReviewQueuePage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="strategies" element={<StrategiesPage />} />
           <Route path="funds" element={<FundsLedgerPage />} />
           <Route path="watchlist" element={<WatchlistPage />} />
-          <Route path="forecast" element={<ForecastPage />} />
-          <Route path="relax" element={<RelaxPage />} />
+          {/* Old addresses: Forecast is now an Analytics tab; Relax is the Break drawer. */}
+          <Route path="forecast" element={<Navigate to="/analytics?tab=forecast" replace />} />
+          <Route path="relax" element={<Navigate to="/" replace />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

@@ -1,47 +1,37 @@
 import { useState } from 'react'
-import { Plus, Trash2, RefreshCw } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Plus, Trash2 } from 'lucide-react'
 import { useFundContext } from '../context/FundContext'
 import { useWatchlist, useUpsertWatchlistItem, useDeleteWatchlistItem } from '../hooks/useWatchlist'
-import { useHoldings, useUpsertHolding, useUpdateHoldingPrice, useDeleteHolding } from '../hooks/useHoldings'
-import { Button, Card, EmptyState, Field, Input, Modal, PageHeader, Pill, Tabs, Textarea, formatCurrency, formatNumber } from '../components/ui'
-
-const TABS = [
-  { id: 'watching', label: 'Watching' },
-  { id: 'holdings', label: 'Holdings' },
-]
+import { Button, Card, EmptyState, Field, Input, Modal, PageHeader, Pill, Select, Textarea } from '../components/ui'
+import { logTradeLink } from '../lib/journalLinks'
 
 export function WatchlistPage() {
-  const { selectedFund } = useFundContext()
+  const { funds, selectedFund, scopeName } = useFundContext()
   const { data: items = [] } = useWatchlist(selectedFund?.id)
   const deleteItem = useDeleteWatchlistItem()
   const [formOpen, setFormOpen] = useState(false)
-  const [tab, setTab] = useState('watching')
 
-  if (!selectedFund) {
-    return <EmptyState title="Pick a fund" description="Select a fund to maintain its watchlist." />
+  if (funds.length === 0) {
+    return <EmptyState title="No funds yet" description="Create a fund in Ledger to start a watchlist." />
   }
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Watchlist"
-        subtitle={selectedFund.name}
+        subtitle={`${scopeName} · ideas with entry, exit and stop levels`}
         action={
-          tab === 'watching' && (
-            <Button onClick={() => setFormOpen(true)}>
-              <Plus size={16} /> Add symbol
-            </Button>
-          )
+          <Button onClick={() => setFormOpen(true)}>
+            <Plus size={16} /> Add symbol
+          </Button>
         }
       />
-      <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
-      {tab === 'holdings' && <HoldingsSection fund={selectedFund} />}
-
-      {tab === 'watching' && (items.length === 0 ? (
+      {items.length === 0 ? (
         <EmptyState
           title="Watchlist is empty"
-          description={`Track symbols for ${selectedFund.name} with entry, exit and stop levels.`}
+          description="Track symbols with entry, exit and stop levels, then log the trade in one click when it triggers."
           action={<Button onClick={() => setFormOpen(true)}>Add symbol</Button>}
         />
       ) : (
@@ -50,6 +40,7 @@ export function WatchlistPage() {
             <thead>
               <tr className="text-left text-xs text-[var(--ink-faint)] font-medium border-b border-[var(--border)]">
                 <th className="px-5 py-3">Symbol</th>
+                {!selectedFund && <th className="px-5 py-3">Fund</th>}
                 <th className="px-5 py-3">Entry</th>
                 <th className="px-5 py-3">Exit</th>
                 <th className="px-5 py-3">Stop</th>
@@ -62,6 +53,7 @@ export function WatchlistPage() {
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-[var(--border)] last:border-0">
                   <td className="px-5 py-3 font-medium">{item.symbol}</td>
+                  {!selectedFund && <td className="px-5 py-3 text-[var(--ink-muted)]">{item.fund?.name ?? '—'}</td>}
                   <td className="px-5 py-3 tabular">{item.entry_target ?? '—'}</td>
                   <td className="px-5 py-3 tabular">{item.exit_target ?? '—'}</td>
                   <td className="px-5 py-3 tabular">{item.stop_loss ?? '—'}</td>
@@ -71,72 +63,15 @@ export function WatchlistPage() {
                     </Pill>
                   </td>
                   <td className="px-5 py-3 text-[var(--ink-muted)] max-w-[20ch] truncate">{item.notes}</td>
-                  <td className="px-5 py-3 text-right">
-                    <button onClick={() => deleteItem.mutate(item.id)} className="text-[var(--ink-faint)] hover:text-[var(--red)]">
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
-      ))}
-
-      <WatchlistFormModal open={formOpen} fundId={selectedFund.id} onClose={() => setFormOpen(false)} />
-    </div>
-  )
-}
-
-function HoldingsSection({ fund }) {
-  const { data: holdings = [] } = useHoldings(fund.id)
-  const deleteHolding = useDeleteHolding()
-  const [formOpen, setFormOpen] = useState(false)
-  const [priceEdit, setPriceEdit] = useState(null)
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-base">Portfolio holdings</h2>
-        <Button variant="secondary" onClick={() => setFormOpen(true)}>
-          <Plus size={15} /> Add holding
-        </Button>
-      </div>
-
-      {holdings.length === 0 ? (
-        <p className="text-sm text-[var(--ink-faint)]">No holdings entered manually yet for {fund.name}.</p>
-      ) : (
-        <Card className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-[var(--ink-faint)] font-medium border-b border-[var(--border)]">
-                <th className="px-5 py-3">Symbol</th>
-                <th className="px-5 py-3">Qty</th>
-                <th className="px-5 py-3">Avg price</th>
-                <th className="px-5 py-3">Last price</th>
-                <th className="px-5 py-3 text-right">Market value</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {holdings.map((h) => (
-                <tr key={h.id} className="border-b border-[var(--border)] last:border-0">
-                  <td className="px-5 py-3 font-medium">{h.symbol}</td>
-                  <td className="px-5 py-3 tabular">{formatNumber(h.quantity)}</td>
-                  <td className="px-5 py-3 tabular">{formatCurrency(h.avg_price, fund.currency)}</td>
-                  <td className="px-5 py-3 tabular">
-                    <button onClick={() => setPriceEdit(h)} className="flex items-center gap-1 hover:text-[var(--accent)]">
-                      {h.last_price ? formatCurrency(h.last_price, fund.currency) : 'set price'}
-                      <RefreshCw size={11} />
-                    </button>
-                  </td>
-                  <td className="px-5 py-3 text-right tabular font-medium">
-                    {formatCurrency((h.last_price ?? h.avg_price) * h.quantity, fund.currency)}
-                  </td>
-                  <td className="px-5 py-3 text-right">
-                    <button onClick={() => deleteHolding.mutate(h.id)} className="text-[var(--ink-faint)] hover:text-[var(--red)]">
-                      <Trash2 size={14} />
-                    </button>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center justify-end gap-3">
+                      <Link to={logTradeLink(item)} className="text-xs font-medium text-[var(--primary)] hover:underline whitespace-nowrap">
+                        Log trade
+                      </Link>
+                      <button onClick={() => deleteItem.mutate(item.id)} className="text-[var(--ink-faint)] hover:text-[var(--red)]">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -145,83 +80,20 @@ function HoldingsSection({ fund }) {
         </Card>
       )}
 
-      <HoldingFormModal open={formOpen} fundId={fund.id} onClose={() => setFormOpen(false)} />
-      <PriceUpdateModal holding={priceEdit} onClose={() => setPriceEdit(null)} />
+      <WatchlistFormModal
+        open={formOpen}
+        funds={funds}
+        defaultFundId={selectedFund?.id ?? funds[0].id}
+        onClose={() => setFormOpen(false)}
+      />
     </div>
   )
 }
 
-function HoldingFormModal({ open, fundId, onClose }) {
-  const upsert = useUpsertHolding()
-  const [symbol, setSymbol] = useState('')
-  const [quantity, setQuantity] = useState('')
-  const [avgPrice, setAvgPrice] = useState('')
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    await upsert.mutateAsync({
-      fund_id: fundId,
-      symbol: symbol.toUpperCase(),
-      quantity: Number(quantity),
-      avg_price: Number(avgPrice),
-    })
-    setSymbol('')
-    setQuantity('')
-    setAvgPrice('')
-    onClose()
-  }
-
-  return (
-    <Modal open={open} onClose={onClose} title="Add holding">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Field label="Symbol">
-          <Input required value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Quantity">
-            <Input type="number" step="any" required value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-          </Field>
-          <Field label="Avg. price">
-            <Input type="number" step="0.01" required value={avgPrice} onChange={(e) => setAvgPrice(e.target.value)} />
-          </Field>
-        </div>
-        <Button type="submit" disabled={upsert.isPending}>
-          {upsert.isPending ? 'Saving…' : 'Add holding'}
-        </Button>
-      </form>
-    </Modal>
-  )
-}
-
-function PriceUpdateModal({ holding, onClose }) {
-  const updatePrice = useUpdateHoldingPrice()
-  const [price, setPrice] = useState('')
-
-  if (!holding) return null
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    await updatePrice.mutateAsync({ id: holding.id, symbol: holding.symbol, price: Number(price) })
-    setPrice('')
-    onClose()
-  }
-
-  return (
-    <Modal open={!!holding} onClose={onClose} title={`Update price — ${holding.symbol}`}>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Field label="Current price">
-          <Input type="number" step="0.01" required autoFocus value={price} onChange={(e) => setPrice(e.target.value)} />
-        </Field>
-        <Button type="submit" disabled={updatePrice.isPending}>
-          {updatePrice.isPending ? 'Saving…' : 'Update'}
-        </Button>
-      </form>
-    </Modal>
-  )
-}
-
-function WatchlistFormModal({ open, fundId, onClose }) {
+function WatchlistFormModal({ open, funds, defaultFundId, onClose }) {
   const upsert = useUpsertWatchlistItem()
+  const [chosenFundId, setChosenFundId] = useState(null)
+  const fundId = chosenFundId ?? defaultFundId
   const [symbol, setSymbol] = useState('')
   const [entryTarget, setEntryTarget] = useState('')
   const [exitTarget, setExitTarget] = useState('')
@@ -243,12 +115,24 @@ function WatchlistFormModal({ open, fundId, onClose }) {
     setExitTarget('')
     setStopLoss('')
     setNotes('')
+    setChosenFundId(null)
     onClose()
   }
 
   return (
     <Modal open={open} onClose={onClose} title="Add to watchlist">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {funds.length > 1 && (
+          <Field label="Fund">
+            <Select value={fundId} onChange={(e) => setChosenFundId(e.target.value)}>
+              {funds.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
         <Field label="Symbol">
           <Input required value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} />
         </Field>

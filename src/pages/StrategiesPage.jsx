@@ -42,7 +42,7 @@ export function StrategiesPage() {
         title="Strategies"
         subtitle="Rules and playbooks behind every trade"
         action={
-          <Button onClick={() => setEditing('new')} disabled={!selectedFundId}>
+          <Button onClick={() => setEditing('new')}>
             <Plus size={16} /> New strategy
           </Button>
         }

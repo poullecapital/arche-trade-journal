@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
 import { addDays, differenceInCalendarDays, format } from 'date-fns'
 import { Line, LineChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { useFundContext } from '../context/FundContext'
-import { useFundSummaries, useFirmSummary } from '../hooks/useFunds'
-import { useAllTrades } from '../hooks/useTrades'
-import { Card, EmptyState, PageHeader, Stat, Tabs, formatCurrency, formatNumber } from '../components/ui'
+import { useFundContext } from '../../context/FundContext'
+import { useFundSummaries, useFirmSummary } from '../../hooks/useFunds'
+import { Card, EmptyState, Stat, Tabs, formatCurrency, formatNumber } from '../ui'
 
 function mean(values) {
   return values.length ? values.reduce((s, v) => s + v, 0) / values.length : 0
@@ -72,13 +71,19 @@ const TABS = [
   { id: 'simulation', label: 'Simulation' },
   { id: 'compare', label: 'Compare funds' },
 ]
+const SINGLE_FUND_TABS = TABS.filter((t) => t.id !== 'compare')
 
-export function ForecastPage() {
-  const { funds } = useFundContext()
-  const { data: summaries = [] } = useFundSummaries()
-  const { data: firm } = useFirmSummary()
-  const { data: trades = [] } = useAllTrades()
-  const [tab, setTab] = useState('trend')
+// Projections from the trades in the current fund scope. Value stats cover the
+// selected fund, or every fund plus unallocated firm cash in all-funds mode.
+export function ForecastPanel({ trades }) {
+  const { funds: allFunds, selectedFundId } = useFundContext()
+  const { data: allSummaries = [] } = useFundSummaries()
+  const { data: allFirm } = useFirmSummary()
+  const funds = selectedFundId ? allFunds.filter((f) => f.id === selectedFundId) : allFunds
+  const summaries = selectedFundId ? allSummaries.filter((s) => s.fund_id === selectedFundId) : allSummaries
+  const firm = selectedFundId ? null : allFirm
+  const [chosenTab, setTab] = useState('trend')
+  const tab = selectedFundId && chosenTab === 'compare' ? 'trend' : chosenTab
 
   const closedTrades = useMemo(
     () => trades.filter((t) => t.status === 'closed' && t.exit_date).sort((a, b) => new Date(a.exit_date) - new Date(b.exit_date)),
@@ -170,8 +175,6 @@ export function ForecastPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Forecast" subtitle="Where your current edge points" />
-
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Current value" value={formatCurrency(currentValue)} />
         <Stat label="Invested capital" value={formatCurrency(investedCapital)} />
@@ -183,7 +186,7 @@ export function ForecastPage() {
         <Stat label="CAGR" value={cagr != null ? `${cagr >= 0 ? '+' : ''}${formatNumber(cagr, 1)}%` : '—'} sub={years ? `over ${formatNumber(years, 1)}y` : undefined} />
       </div>
 
-      <Tabs tabs={TABS} value={tab} onChange={setTab} />
+      <Tabs tabs={selectedFundId ? SINGLE_FUND_TABS : TABS} value={tab} onChange={setTab} />
 
       {tab === 'trend' && (
       <Card className="p-5">
@@ -192,7 +195,7 @@ export function ForecastPage() {
           Base/best/worst extrapolate your historical trade frequency and P&amp;L distribution forward — a transparent trendline, not a simulation.
         </p>
         {chartData.length === 0 ? (
-          <p className="text-sm text-[var(--ink-faint)]">Close at least 3 trades across your funds to see a projection here.</p>
+          <p className="text-sm text-[var(--ink-faint)]">Close at least 3 trades to see a projection here.</p>
         ) : (
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -280,7 +283,7 @@ export function ForecastPage() {
 
       )}
 
-      {tab === 'compare' && (
+      {tab === 'compare' && !selectedFundId && (
       <div>
         <h2 className="font-display text-base mb-3">Fund comparison</h2>
         {summaries.length === 0 ? (
