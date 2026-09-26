@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, ArrowDownToLine, ArrowUpFromLine, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { format } from 'date-fns'
 import { useFundContext } from '../context/FundContext'
@@ -21,46 +22,60 @@ import {
   PageHeader,
   Pill,
   Select,
+  Tabs,
   Textarea,
   formatCurrency,
 } from '../components/ui'
 
+const PAGE_TABS = [
+  { id: 'funds', label: 'Funds' },
+  { id: 'balance', label: 'Balance sheet' },
+  { id: 'books', label: 'Books' },
+]
+
 export function FundsLedgerPage() {
   const { funds, selectedFundId, selectedFund, setSelectedFundId } = useFundContext()
   const { data: summaries = [] } = useFundSummaries()
-  const [newFundOpen, setNewFundOpen] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [newFundOpen, setNewFundOpen] = useState(searchParams.get('new') === '1')
   const [flowOpen, setFlowOpen] = useState(null) // 'deposit' | 'withdrawal' | null
+  const [tab, setTab] = useState('funds')
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <PageHeader
-        eyebrow="Capital & Ledger"
-        title="Funds & Ledger"
+        title="Ledger"
+        subtitle="Funds, capital and the books behind every number"
         action={
           <Button onClick={() => setNewFundOpen(true)}>
             <Plus size={15} /> New fund
           </Button>
         }
       />
+      <Tabs tabs={PAGE_TABS} value={tab} onChange={setTab} />
 
-      <BalanceSheet />
-
-      <FundTable
-        funds={funds}
-        summaries={summaries}
-        selectedFundId={selectedFundId}
-        onSelect={setSelectedFundId}
-      />
-
-      {selectedFund && (
-        <FundDetail
-          fund={selectedFund}
-          onDeposit={() => setFlowOpen('deposit')}
-          onWithdraw={() => setFlowOpen('withdrawal')}
-        />
+      {tab === 'funds' && (
+        <FundTable funds={funds} summaries={summaries} selectedFundId={selectedFundId} onSelect={setSelectedFundId} />
       )}
+      {tab === 'balance' && <BalanceSheet />}
+      {tab === 'books' &&
+        (selectedFund ? (
+          <FundDetail
+            fund={selectedFund}
+            onDeposit={() => setFlowOpen('deposit')}
+            onWithdraw={() => setFlowOpen('withdrawal')}
+          />
+        ) : (
+          <EmptyState title="No fund selected" description="Create or pick a fund to see its books." />
+        ))}
 
-      <NewFundModal open={newFundOpen} onClose={() => setNewFundOpen(false)} />
+      <NewFundModal
+        open={newFundOpen}
+        onClose={() => {
+          setNewFundOpen(false)
+          if (searchParams.has('new')) setSearchParams({}, { replace: true })
+        }}
+      />
       {selectedFund && <FundFlowModal type={flowOpen} fund={selectedFund} onClose={() => setFlowOpen(null)} />}
     </div>
   )
@@ -108,11 +123,11 @@ function BalanceSheet() {
   }
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-mono text-xs uppercase tracking-wide text-[var(--ink-muted)]">Firm balance sheet</h2>
+    <Card className="p-6">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="font-display text-base">Firm balance sheet</h2>
         <span
-          className={`inline-flex items-center gap-1 font-mono text-[.68rem] uppercase tracking-wide ${
+          className={`inline-flex items-center gap-1 text-xs font-medium ${
             sheet.balanced ? 'text-[var(--accent)]' : 'text-[var(--red)]'
           }`}
         >
@@ -125,7 +140,7 @@ function BalanceSheet() {
         <div className="flex flex-col gap-4">
           <BalanceColumn title="Liabilities" rows={sheet.liabilities} total={sheet.totalLiabilities} empty="None recorded" />
           <div>
-            <div className="font-mono text-[.68rem] uppercase tracking-wide text-[var(--ink-faint)] mb-1.5">Equity</div>
+            <div className="text-xs font-medium text-[var(--ink-faint)] mb-1.5">Equity</div>
             <table className="w-full text-sm">
               <tbody>
                 {sheet.capital.map((a) => (
@@ -160,7 +175,7 @@ function BalanceSheet() {
 function BalanceColumn({ title, rows, total, empty }) {
   return (
     <div>
-      <div className="font-mono text-[.68rem] uppercase tracking-wide text-[var(--ink-faint)] mb-1.5">{title}</div>
+      <div className="text-xs font-medium text-[var(--ink-faint)] mb-1.5">{title}</div>
       <table className="w-full text-sm">
         <tbody>
           {rows.length === 0 ? (
@@ -201,14 +216,14 @@ function FundTable({ funds, summaries, selectedFundId, onSelect }) {
     <Card className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-xs text-[var(--ink-faint)] font-mono uppercase border-b border-[var(--border)]">
-            <th className="px-3 py-2 font-normal">Fund</th>
-            <th className="px-3 py-2 font-normal text-right">NAV</th>
-            <th className="px-3 py-2 font-normal text-right">Cash</th>
-            <th className="px-3 py-2 font-normal text-right">Holdings</th>
-            <th className="px-3 py-2 font-normal text-right">Capital</th>
-            <th className="px-3 py-2 font-normal text-right">Realized</th>
-            <th className="px-3 py-2 font-normal">Status</th>
+          <tr className="text-left text-xs text-[var(--ink-faint)] font-medium border-b border-[var(--border)]">
+            <th className="px-5 py-3">Fund</th>
+            <th className="px-5 py-3 text-right">NAV</th>
+            <th className="px-5 py-3 text-right">Cash</th>
+            <th className="px-5 py-3 text-right">Holdings</th>
+            <th className="px-5 py-3 text-right">Capital</th>
+            <th className="px-5 py-3 text-right">Realized</th>
+            <th className="px-5 py-3">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -221,22 +236,22 @@ function FundTable({ funds, summaries, selectedFundId, onSelect }) {
                 key={fund.id}
                 onClick={() => onSelect(fund.id)}
                 className={`border-b border-[var(--border)] last:border-0 cursor-pointer ${
-                  isSelected ? 'bg-[var(--accent-soft)]' : 'hover:bg-[var(--surface-2)]'
+                  isSelected ? 'bg-[var(--surface-2)]' : 'hover:bg-[var(--surface-2)]'
                 }`}
               >
-                <td className="px-3 py-2 font-medium">{fund.name}</td>
-                <td className="px-3 py-2 text-right tabular font-medium">{formatCurrency(nav, fund.currency)}</td>
-                <td className="px-3 py-2 text-right tabular text-[var(--ink-muted)]">{formatCurrency(s?.cash_balance, fund.currency)}</td>
-                <td className="px-3 py-2 text-right tabular text-[var(--ink-muted)]">{formatCurrency(s?.holdings_value, fund.currency)}</td>
-                <td className="px-3 py-2 text-right tabular text-[var(--ink-muted)]">{formatCurrency(s?.capital, fund.currency)}</td>
+                <td className="px-5 py-3 font-medium">{fund.name}</td>
+                <td className="px-5 py-3 text-right tabular font-medium">{formatCurrency(nav, fund.currency)}</td>
+                <td className="px-5 py-3 text-right tabular text-[var(--ink-muted)]">{formatCurrency(s?.cash_balance, fund.currency)}</td>
+                <td className="px-5 py-3 text-right tabular text-[var(--ink-muted)]">{formatCurrency(s?.holdings_value, fund.currency)}</td>
+                <td className="px-5 py-3 text-right tabular text-[var(--ink-muted)]">{formatCurrency(s?.capital, fund.currency)}</td>
                 <td
-                  className={`px-3 py-2 text-right tabular ${
+                  className={`px-5 py-3 text-right tabular ${
                     s?.realized_pnl > 0 ? 'text-[var(--accent)]' : s?.realized_pnl < 0 ? 'text-[var(--red)]' : 'text-[var(--ink-muted)]'
                   }`}
                 >
                   {formatCurrency(s?.realized_pnl, fund.currency)}
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-5 py-3">
                   <Pill tone={fund.status === 'active' ? 'accent' : 'default'}>{fund.status}</Pill>
                 </td>
               </tr>
@@ -259,9 +274,9 @@ function FundDetail({ fund, onDeposit, onWithdraw }) {
   const updateStatus = useUpdateFundStatus()
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="font-mono text-xs uppercase tracking-wide text-[var(--ink-muted)]">{fund.name} — books</h2>
+        <h2 className="font-display text-base">{fund.name}</h2>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={onDeposit}>
             <ArrowDownToLine size={14} /> Deposit
@@ -278,19 +293,7 @@ function FundDetail({ fund, onDeposit, onWithdraw }) {
         </div>
       </div>
 
-      <div className="flex gap-1 border-b border-[var(--border)]">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-3 py-2 font-mono text-[.7rem] uppercase tracking-wide border-b-2 -mb-px transition-colors ${
-              tab === t.id ? 'text-[var(--accent)] border-[var(--accent)]' : 'text-[var(--ink-muted)] border-transparent hover:text-[var(--ink)]'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
       {tab === 'accounts' && <ChartOfAccountsTab fund={fund} />}
       {tab === 'flows' && <FundFlowsTab fund={fund} />}
@@ -302,13 +305,13 @@ function FundDetail({ fund, onDeposit, onWithdraw }) {
 function ChartOfAccountsTab({ fund }) {
   const { data: balances = [] } = useAccountBalances(fund.id)
   return (
-    <Card className="p-4">
+    <Card className="px-5 py-3">
       <table className="w-full text-sm">
         <tbody>
           {balances.map((a) => (
             <tr key={a.account_id} className="border-t border-[var(--border)] first:border-0">
               <td className="py-1.5 text-[var(--ink-muted)]">{a.name}</td>
-              <td className="py-1.5 text-[var(--ink-faint)] font-mono text-xs uppercase">{a.type}</td>
+              <td className="py-1.5 text-[var(--ink-faint)] text-xs">{a.type}</td>
               <td className="py-1.5 text-right tabular font-medium">{formatCurrency(a.balance, fund.currency)}</td>
             </tr>
           ))}
@@ -330,24 +333,24 @@ function FundFlowsTab({ fund }) {
     <Card className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-xs text-[var(--ink-faint)] font-mono uppercase border-b border-[var(--border)]">
-            <th className="px-3 py-2 font-normal">Date</th>
-            <th className="px-3 py-2 font-normal">Type</th>
-            <th className="px-3 py-2 font-normal">Source</th>
-            <th className="px-3 py-2 font-normal">Counterparty</th>
-            <th className="px-3 py-2 font-normal text-right">Amount</th>
+          <tr className="text-left text-xs text-[var(--ink-faint)] font-medium border-b border-[var(--border)]">
+            <th className="px-5 py-3">Date</th>
+            <th className="px-5 py-3">Type</th>
+            <th className="px-5 py-3">Source</th>
+            <th className="px-5 py-3">Counterparty</th>
+            <th className="px-5 py-3 text-right">Amount</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           {flows.map((f) => (
             <tr key={f.id} className="border-b border-[var(--border)] last:border-0">
-              <td className="px-3 py-2 font-mono text-xs">{format(new Date(f.flow_date), 'dd MMM yyyy')}</td>
-              <td className="px-3 py-2 font-medium">{f.type === 'deposit' ? 'Deposit' : 'Withdrawal'}</td>
-              <td className="px-3 py-2 text-[var(--ink-muted)]">{f.source === 'external' ? 'external' : 'firm cash'}</td>
-              <td className="px-3 py-2 text-[var(--ink-muted)]">{f.counterparty || '—'}</td>
-              <td className="px-3 py-2 text-right tabular font-medium">{formatCurrency(f.amount, fund.currency)}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-5 py-3 text-xs">{format(new Date(f.flow_date), 'dd MMM yyyy')}</td>
+              <td className="px-5 py-3 font-medium">{f.type === 'deposit' ? 'Deposit' : 'Withdrawal'}</td>
+              <td className="px-5 py-3 text-[var(--ink-muted)]">{f.source === 'external' ? 'external' : 'firm cash'}</td>
+              <td className="px-5 py-3 text-[var(--ink-muted)]">{f.counterparty || '—'}</td>
+              <td className="px-5 py-3 text-right tabular font-medium">{formatCurrency(f.amount, fund.currency)}</td>
+              <td className="px-5 py-3 text-right">
                 <button onClick={() => deleteFlow.mutate(f.id)} className="text-[var(--ink-faint)] hover:text-[var(--red)]">
                   <Trash2 size={13} />
                 </button>
@@ -371,24 +374,24 @@ function LedgerActivityTab({ fund }) {
     <Card className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-xs text-[var(--ink-faint)] font-mono uppercase border-b border-[var(--border)]">
-            <th className="px-3 py-2 font-normal">Date</th>
-            <th className="px-3 py-2 font-normal">Description</th>
-            <th className="px-3 py-2 font-normal">Account</th>
-            <th className="px-3 py-2 font-normal text-right">Debit</th>
-            <th className="px-3 py-2 font-normal text-right">Credit</th>
+          <tr className="text-left text-xs text-[var(--ink-faint)] font-medium border-b border-[var(--border)]">
+            <th className="px-5 py-3">Date</th>
+            <th className="px-5 py-3">Description</th>
+            <th className="px-5 py-3">Account</th>
+            <th className="px-5 py-3 text-right">Debit</th>
+            <th className="px-5 py-3 text-right">Credit</th>
           </tr>
         </thead>
         <tbody>
           {ledgerLines.map((row) => (
             <tr key={row.id} className="border-b border-[var(--border)] last:border-0">
-              <td className="px-3 py-2 font-mono text-xs text-[var(--ink-muted)]">
+              <td className="px-5 py-3 text-xs text-[var(--ink-muted)]">
                 {row.entry ? format(new Date(row.entry.entry_date), 'dd MMM') : '—'}
               </td>
-              <td className="px-3 py-2">{row.entry?.description}</td>
-              <td className="px-3 py-2 text-[var(--ink-muted)]">{row.account?.name}</td>
-              <td className="px-3 py-2 text-right tabular">{row.debit > 0 ? formatCurrency(row.debit, fund.currency) : ''}</td>
-              <td className="px-3 py-2 text-right tabular">{row.credit > 0 ? formatCurrency(row.credit, fund.currency) : ''}</td>
+              <td className="px-5 py-3">{row.entry?.description}</td>
+              <td className="px-5 py-3 text-[var(--ink-muted)]">{row.account?.name}</td>
+              <td className="px-5 py-3 text-right tabular">{row.debit > 0 ? formatCurrency(row.debit, fund.currency) : ''}</td>
+              <td className="px-5 py-3 text-right tabular">{row.credit > 0 ? formatCurrency(row.credit, fund.currency) : ''}</td>
             </tr>
           ))}
         </tbody>

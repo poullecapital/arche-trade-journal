@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, X, Trash2, Pencil } from 'lucide-react'
 import { useFundContext } from '../context/FundContext'
 import { useStrategies, useUpsertStrategy, useDeleteStrategy } from '../hooks/useStrategies'
@@ -26,7 +27,8 @@ export function StrategiesPage() {
   const { data: strategies = [] } = useStrategies(selectedFundId)
   const { data: allTrades = [] } = useAllTrades()
   const deleteStrategy = useDeleteStrategy()
-  const [editing, setEditing] = useState(null) // strategy object or 'new' or null
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [editing, setEditing] = useState(searchParams.get('new') === '1' ? 'new' : null) // strategy object or 'new' or null
 
   const adherenceByStrategy = useMemo(() => {
     const map = {}
@@ -35,10 +37,10 @@ export function StrategiesPage() {
   }, [strategies, allTrades])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <PageHeader
-        eyebrow="Trading Discipline"
         title="Strategies"
+        subtitle="Rules and playbooks behind every trade"
         action={
           <Button onClick={() => setEditing('new')} disabled={!selectedFundId}>
             <Plus size={16} /> New strategy
@@ -90,17 +92,17 @@ export function StrategiesPage() {
               {adherenceByStrategy[s.id] && (
                 <div className="border-t border-[var(--border)] pt-3 grid grid-cols-3 gap-2 text-xs">
                   <div>
-                    <div className="text-[var(--ink-faint)] font-mono uppercase">Adherence</div>
+                    <div className="text-[var(--ink-faint)] font-medium">Adherence</div>
                     <div className="tabular font-medium">{adherenceByStrategy[s.id].adherencePct}%</div>
                   </div>
                   <div>
-                    <div className="text-[var(--ink-faint)] font-mono uppercase">Avg P&amp;L · followed</div>
+                    <div className="text-[var(--ink-faint)] font-medium">Avg P&amp;L · followed</div>
                     <div className="tabular font-medium text-[var(--accent)]">
                       {adherenceByStrategy[s.id].avgPnlFollowed != null ? formatCurrency(adherenceByStrategy[s.id].avgPnlFollowed) : '—'}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[var(--ink-faint)] font-mono uppercase">Avg P&amp;L · broke rules</div>
+                    <div className="text-[var(--ink-faint)] font-medium">Avg P&amp;L · broke rules</div>
                     <div className="tabular font-medium text-[var(--red)]">
                       {adherenceByStrategy[s.id].avgPnlBroke != null ? formatCurrency(adherenceByStrategy[s.id].avgPnlBroke) : '—'}
                     </div>
@@ -117,7 +119,10 @@ export function StrategiesPage() {
         strategy={editing === 'new' ? null : editing}
         fundId={selectedFundId}
         funds={funds}
-        onClose={() => setEditing(null)}
+        onClose={() => {
+          setEditing(null)
+          if (searchParams.has('new')) setSearchParams({}, { replace: true })
+        }}
       />
     </div>
   )

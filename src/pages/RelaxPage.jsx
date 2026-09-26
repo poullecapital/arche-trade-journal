@@ -1,20 +1,34 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pause, Play, Plus, RotateCcw, Trash2, Volume2, VolumeX } from 'lucide-react'
 import { useCreateStickyNote, useDeleteStickyNote, useStickyNotes, useUpdateStickyNote } from '../hooks/useStickyNotes'
-import { Button, Card, PageHeader } from '../components/ui'
+import { Button, Card, PageHeader, Tabs } from '../components/ui'
+
+const TABS = [
+  { id: 'focus', label: 'Focus' },
+  { id: 'unwind', label: 'Unwind' },
+  { id: 'notes', label: 'Notes' },
+]
 
 export function RelaxPage() {
+  const [tab, setTab] = useState('focus')
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader eyebrow="Recovery" title="Relax" />
-      <div className="grid md:grid-cols-3 gap-5">
-        <Clock />
-        <FocusTimer />
-        <BreathingGuide />
-      </div>
-      <AmbientPlayer />
-      <BubbleWrap />
-      <StickyNotes />
+    <div className="flex flex-col gap-5">
+      <PageHeader title="Relax" subtitle="Step away from the screen for a minute" />
+      <Tabs tabs={TABS} value={tab} onChange={setTab} />
+      {tab === 'focus' && (
+        <div className="grid md:grid-cols-3 gap-4">
+          <Clock />
+          <FocusTimer />
+          <BreathingGuide />
+        </div>
+      )}
+      {tab === 'unwind' && (
+        <>
+          <AmbientPlayer />
+          <BubbleWrap />
+        </>
+      )}
+      {tab === 'notes' && <StickyNotes />}
     </div>
   )
 }
@@ -44,7 +58,7 @@ function BreathingGuide() {
         <div
           className="absolute inset-0 rounded-full"
           style={{
-            background: 'color-mix(in srgb, var(--accent) 25%, transparent)',
+            background: 'color-mix(in srgb, var(--primary) 25%, transparent)',
             transform: `scale(${active ? phase.scale : 0.55})`,
             transition: `transform ${active ? phase.duration : 300}ms ease-in-out`,
           }}
@@ -94,7 +108,7 @@ function BubbleWrap() {
   return (
     <Card className="p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-semibold">Bubble wrap</h2>
+        <h2 className="font-display text-base">Bubble wrap</h2>
         <Button variant="secondary" onClick={() => setPopped(new Set())} disabled={popped.size === 0}>
           <RotateCcw size={14} /> Reset
         </Button>
@@ -110,7 +124,7 @@ function BubbleWrap() {
             style={{
               background: popped.has(i)
                 ? 'color-mix(in srgb, var(--ink) 8%, var(--surface-2))'
-                : 'color-mix(in srgb, var(--accent) 30%, var(--surface))',
+                : 'color-mix(in srgb, var(--primary) 30%, var(--surface))',
               boxShadow: popped.has(i) ? 'inset 0 1px 3px rgba(0,0,0,.25)' : 'var(--shadow)',
               transform: popped.has(i) ? 'scale(0.8)' : 'scale(1)',
               cursor: popped.has(i) ? 'default' : 'pointer',
@@ -284,7 +298,7 @@ function AmbientPlayer() {
 
   return (
     <Card className="p-5 flex flex-col gap-3">
-      <h2 className="font-display text-lg font-semibold">Ambient sound</h2>
+      <h2 className="font-display text-base">Ambient sound</h2>
       <div className="flex flex-wrap gap-2">
         {SOUNDS.map((s) => (
           <button
@@ -292,7 +306,7 @@ function AmbientPlayer() {
             onClick={() => setSound(s.id)}
             className={`text-sm px-3 py-1.5 rounded-full border ${
               sound === s.id
-                ? 'bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]'
+                ? 'bg-[var(--primary)] text-[var(--primary-ink)] border-[var(--primary)]'
                 : 'border-[var(--border)] text-[var(--ink-muted)] hover:text-[var(--ink)]'
             }`}
           >
@@ -328,7 +342,7 @@ function StickyNotes() {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-display text-lg font-semibold">Sticky notes</h2>
+        <h2 className="font-display text-base">Sticky notes</h2>
         <Button
           variant="secondary"
           onClick={() => create.mutate({ content: '', color: COLORS[notes.length % COLORS.length] })}

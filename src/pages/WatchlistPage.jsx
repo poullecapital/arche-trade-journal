@@ -3,31 +3,42 @@ import { Plus, Trash2, RefreshCw } from 'lucide-react'
 import { useFundContext } from '../context/FundContext'
 import { useWatchlist, useUpsertWatchlistItem, useDeleteWatchlistItem } from '../hooks/useWatchlist'
 import { useHoldings, useUpsertHolding, useUpdateHoldingPrice, useDeleteHolding } from '../hooks/useHoldings'
-import { Button, Card, EmptyState, Field, Input, Modal, PageHeader, Pill, Textarea, formatCurrency, formatNumber } from '../components/ui'
+import { Button, Card, EmptyState, Field, Input, Modal, PageHeader, Pill, Tabs, Textarea, formatCurrency, formatNumber } from '../components/ui'
+
+const TABS = [
+  { id: 'watching', label: 'Watching' },
+  { id: 'holdings', label: 'Holdings' },
+]
 
 export function WatchlistPage() {
   const { selectedFund } = useFundContext()
   const { data: items = [] } = useWatchlist(selectedFund?.id)
   const deleteItem = useDeleteWatchlistItem()
   const [formOpen, setFormOpen] = useState(false)
+  const [tab, setTab] = useState('watching')
 
   if (!selectedFund) {
     return <EmptyState title="Pick a fund" description="Select a fund to maintain its watchlist." />
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <PageHeader
-        eyebrow="Market Prep"
         title="Watchlist"
+        subtitle={selectedFund.name}
         action={
-          <Button onClick={() => setFormOpen(true)}>
-            <Plus size={16} /> Add symbol
-          </Button>
+          tab === 'watching' && (
+            <Button onClick={() => setFormOpen(true)}>
+              <Plus size={16} /> Add symbol
+            </Button>
+          )
         }
       />
+      <Tabs tabs={TABS} value={tab} onChange={setTab} />
 
-      {items.length === 0 ? (
+      {tab === 'holdings' && <HoldingsSection fund={selectedFund} />}
+
+      {tab === 'watching' && (items.length === 0 ? (
         <EmptyState
           title="Watchlist is empty"
           description={`Track symbols for ${selectedFund.name} with entry, exit and stop levels.`}
@@ -37,30 +48,30 @@ export function WatchlistPage() {
         <Card className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-[var(--ink-faint)] font-mono uppercase border-b border-[var(--border)]">
-                <th className="px-4 py-2 font-normal">Symbol</th>
-                <th className="px-4 py-2 font-normal">Entry</th>
-                <th className="px-4 py-2 font-normal">Exit</th>
-                <th className="px-4 py-2 font-normal">Stop</th>
-                <th className="px-4 py-2 font-normal">Status</th>
-                <th className="px-4 py-2 font-normal">Notes</th>
+              <tr className="text-left text-xs text-[var(--ink-faint)] font-medium border-b border-[var(--border)]">
+                <th className="px-5 py-3">Symbol</th>
+                <th className="px-5 py-3">Entry</th>
+                <th className="px-5 py-3">Exit</th>
+                <th className="px-5 py-3">Stop</th>
+                <th className="px-5 py-3">Status</th>
+                <th className="px-5 py-3">Notes</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-[var(--border)] last:border-0">
-                  <td className="px-4 py-2 font-medium">{item.symbol}</td>
-                  <td className="px-4 py-2 tabular">{item.entry_target ?? '—'}</td>
-                  <td className="px-4 py-2 tabular">{item.exit_target ?? '—'}</td>
-                  <td className="px-4 py-2 tabular">{item.stop_loss ?? '—'}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-5 py-3 font-medium">{item.symbol}</td>
+                  <td className="px-5 py-3 tabular">{item.entry_target ?? '—'}</td>
+                  <td className="px-5 py-3 tabular">{item.exit_target ?? '—'}</td>
+                  <td className="px-5 py-3 tabular">{item.stop_loss ?? '—'}</td>
+                  <td className="px-5 py-3">
                     <Pill tone={item.status === 'watching' ? 'accent' : item.status === 'triggered' ? 'amber' : 'default'}>
                       {item.status}
                     </Pill>
                   </td>
-                  <td className="px-4 py-2 text-[var(--ink-muted)] max-w-[20ch] truncate">{item.notes}</td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-5 py-3 text-[var(--ink-muted)] max-w-[20ch] truncate">{item.notes}</td>
+                  <td className="px-5 py-3 text-right">
                     <button onClick={() => deleteItem.mutate(item.id)} className="text-[var(--ink-faint)] hover:text-[var(--red)]">
                       <Trash2 size={14} />
                     </button>
@@ -70,11 +81,9 @@ export function WatchlistPage() {
             </tbody>
           </table>
         </Card>
-      )}
+      ))}
 
       <WatchlistFormModal open={formOpen} fundId={selectedFund.id} onClose={() => setFormOpen(false)} />
-
-      <HoldingsSection fund={selectedFund} />
     </div>
   )
 }
@@ -86,9 +95,9 @@ function HoldingsSection({ fund }) {
   const [priceEdit, setPriceEdit] = useState(null)
 
   return (
-    <div className="flex flex-col gap-4 pt-2 border-t border-[var(--border)]">
-      <div className="flex items-center justify-between pt-4">
-        <h2 className="font-display text-lg font-semibold">Portfolio holdings</h2>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-base">Portfolio holdings</h2>
         <Button variant="secondary" onClick={() => setFormOpen(true)}>
           <Plus size={15} /> Add holding
         </Button>
@@ -100,31 +109,31 @@ function HoldingsSection({ fund }) {
         <Card className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-[var(--ink-faint)] font-mono uppercase border-b border-[var(--border)]">
-                <th className="px-4 py-2 font-normal">Symbol</th>
-                <th className="px-4 py-2 font-normal">Qty</th>
-                <th className="px-4 py-2 font-normal">Avg price</th>
-                <th className="px-4 py-2 font-normal">Last price</th>
-                <th className="px-4 py-2 font-normal text-right">Market value</th>
+              <tr className="text-left text-xs text-[var(--ink-faint)] font-medium border-b border-[var(--border)]">
+                <th className="px-5 py-3">Symbol</th>
+                <th className="px-5 py-3">Qty</th>
+                <th className="px-5 py-3">Avg price</th>
+                <th className="px-5 py-3">Last price</th>
+                <th className="px-5 py-3 text-right">Market value</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {holdings.map((h) => (
                 <tr key={h.id} className="border-b border-[var(--border)] last:border-0">
-                  <td className="px-4 py-2 font-medium">{h.symbol}</td>
-                  <td className="px-4 py-2 tabular">{formatNumber(h.quantity)}</td>
-                  <td className="px-4 py-2 tabular">{formatCurrency(h.avg_price, fund.currency)}</td>
-                  <td className="px-4 py-2 tabular">
+                  <td className="px-5 py-3 font-medium">{h.symbol}</td>
+                  <td className="px-5 py-3 tabular">{formatNumber(h.quantity)}</td>
+                  <td className="px-5 py-3 tabular">{formatCurrency(h.avg_price, fund.currency)}</td>
+                  <td className="px-5 py-3 tabular">
                     <button onClick={() => setPriceEdit(h)} className="flex items-center gap-1 hover:text-[var(--accent)]">
                       {h.last_price ? formatCurrency(h.last_price, fund.currency) : 'set price'}
                       <RefreshCw size={11} />
                     </button>
                   </td>
-                  <td className="px-4 py-2 text-right tabular font-medium">
+                  <td className="px-5 py-3 text-right tabular font-medium">
                     {formatCurrency((h.last_price ?? h.avg_price) * h.quantity, fund.currency)}
                   </td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-5 py-3 text-right">
                     <button onClick={() => deleteHolding.mutate(h.id)} className="text-[var(--ink-faint)] hover:text-[var(--red)]">
                       <Trash2 size={14} />
                     </button>

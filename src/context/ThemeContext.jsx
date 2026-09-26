@@ -4,11 +4,10 @@ const ThemeContext = createContext(null)
 const STORAGE_KEY = 'arche-theme'
 
 export function ThemeProvider({ children }) {
-  // Defaults to dark regardless of system preference — a trading terminal
-  // opens dark, same as it always has, until you tell it otherwise.
+  // Defaults to light regardless of system preference until you pick a theme.
   const [theme, setTheme] = useState(() => {
-    if (typeof window === 'undefined') return 'dark'
-    return localStorage.getItem(STORAGE_KEY) || 'dark'
+    if (typeof window === 'undefined') return 'light'
+    return localStorage.getItem(STORAGE_KEY) || 'light'
   })
 
   useEffect(() => {
