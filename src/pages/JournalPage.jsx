@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Plus, ImagePlus, X } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { AlertTriangle, ImagePlus, Pencil, Plus, Scissors, TrendingUp, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { useFundContext } from '../context/FundContext'
 import { useStrategies } from '../hooks/useStrategies'
+import { useGoalStatus } from '../hooks/useGoals'
+import { splitTags, tagLabel } from '../lib/analytics'
+import { AddForm, AmendForm, PartialForm, TagPicker } from '../components/journal/TradeTools'
 import {
   useTrades,
   useOpenTrade,
@@ -29,23 +33,49 @@ import {
 
 export function JournalPage() {
   const { selectedFund } = useFundContext()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [statusFilter, setStatusFilter] = useState('')
-  const [symbolFilter, setSymbolFilter] = useState('')
+  const [symbolFilter, setSymbolFilter] = useState(searchParams.get('symbol') ?? '')
   const { data: trades = [] } = useTrades(selectedFund?.id, { status: statusFilter || undefined, symbol: symbolFilter || undefined })
   const [openForm, setOpenForm] = useState(false)
+  const [prefill, setPrefill] = useState(null)
   const [activeTrade, setActiveTrade] = useState(null)
 
+  // Deep links: /journal?new=1&symbol=..&entry=.. opens the log form, /journal?symbol=.. filters.
+  useEffect(() => {
+    if (!searchParams.toString()) return
+    if (searchParams.get('new') === '1') {
+      setPrefill({
+        symbol: searchParams.get('symbol') ?? '',
+        direction: searchParams.get('dir') === 'short' ? 'short' : 'long',
+        entryPrice: searchParams.get('entry') ?? '',
+        entryQuantity: searchParams.get('qty') ?? '',
+        stopLoss: searchParams.get('stop') ?? '',
+        targetPrice: searchParams.get('target') ?? '',
+      })
+      setOpenForm(true)
+    } else if (searchParams.get('symbol')) {
+      setSymbolFilter(searchParams.get('symbol'))
+    }
+    setSearchParams({}, { replace: true })
+  }, [searchParams, setSearchParams])
+
   if (!selectedFund) {
-    return <EmptyState title="Pick a fund" description="Create or select a fund from Funds & Ledger before journaling trades." />
+    return <EmptyState title="Pick a fund" description="Create or select a fund from Ledger before journaling trades." />
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <PageHeader
-        eyebrow="Trading Discipline"
         title="Journal"
+        subtitle={selectedFund.name}
         action={
-          <Button onClick={() => setOpenForm(true)}>
+          <Button
+            onClick={() => {
+              setPrefill(null)
+              setOpenForm(true)
+            }}
+          >
             <Plus size={16} /> Log trade
           </Button>
         }
@@ -75,15 +105,15 @@ export function JournalPage() {
         <Card className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-[var(--ink-faint)] font-mono uppercase border-b border-[var(--border)]">
-                <th className="px-4 py-2 font-normal">Symbol</th>
-                <th className="px-4 py-2 font-normal">Dir</th>
-                <th className="px-4 py-2 font-normal">Strategy</th>
-                <th className="px-4 py-2 font-normal">Entry</th>
-                <th className="px-4 py-2 font-normal">Exit</th>
-                <th className="px-4 py-2 font-normal text-right">P&amp;L</th>
-                <th className="px-4 py-2 font-normal text-right">R</th>
-                <th className="px-4 py-2 font-normal">Status</th>
+              <tr className="text-left text-xs text-[var(--ink-faint)] font-medium border-b border-[var(--border)]">
+                <th className="px-5 py-3">Symbol</th>
+                <th className="px-5 py-3">Dir</th>
+                <th className="px-5 py-3">Strategy</th>
+                <th className="px-5 py-3">Entry</th>
+                <th className="px-5 py-3">Exit</th>
+                <th className="px-5 py-3 text-right">P&amp;L</th>
+                <th className="px-5 py-3 text-right">R</th>
+                <th className="px-5 py-3">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -93,24 +123,31 @@ export function JournalPage() {
                   onClick={() => setActiveTrade(t)}
                   className="border-b border-[var(--border)] last:border-0 cursor-pointer hover:bg-[var(--surface-2)]"
                 >
-                  <td className="px-4 py-2 font-medium">{t.symbol}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-5 py-3 font-medium">
+                    {t.symbol}
+                    {splitTags(t.tags).mistakes.length > 0 && (
+                      <span className="ml-2 align-middle" title={splitTags(t.tags).mistakes.map((m) => tagLabel('mistake', m)).join(', ')}>
+                        <Pill tone="red">{splitTags(t.tags).mistakes.length} mistake{splitTags(t.tags).mistakes.length > 1 ? 's' : ''}</Pill>
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3">
                     <Pill tone={t.direction === 'long' ? 'accent' : 'amber'}>{t.direction}</Pill>
                   </td>
-                  <td className="px-4 py-2 text-[var(--ink-muted)]">{t.strategy?.name ?? '—'}</td>
-                  <td className="px-4 py-2 font-mono text-xs">{format(new Date(t.entry_date), 'dd MMM yy')}</td>
-                  <td className="px-4 py-2 font-mono text-xs">
+                  <td className="px-5 py-3 text-[var(--ink-muted)]">{t.strategy?.name ?? '—'}</td>
+                  <td className="px-5 py-3 text-xs">{format(new Date(t.entry_date), 'dd MMM yy')}</td>
+                  <td className="px-5 py-3 text-xs">
                     {t.exit_date ? format(new Date(t.exit_date), 'dd MMM yy') : '—'}
                   </td>
                   <td
-                    className={`px-4 py-2 text-right tabular font-medium ${
+                    className={`px-5 py-3 text-right tabular font-medium ${
                       t.pnl > 0 ? 'text-[var(--accent)]' : t.pnl < 0 ? 'text-[var(--red)]' : ''
                     }`}
                   >
                     {t.pnl != null ? formatCurrency(t.pnl, selectedFund.currency) : '—'}
                   </td>
-                  <td className="px-4 py-2 text-right tabular">{t.r_multiple != null ? formatNumber(t.r_multiple) : '—'}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-5 py-3 text-right tabular">{t.r_multiple != null ? formatNumber(t.r_multiple) : '—'}</td>
+                  <td className="px-5 py-3">
                     <Pill tone={t.status === 'open' ? 'amber' : 'default'}>{t.status}</Pill>
                   </td>
                 </tr>
@@ -120,7 +157,7 @@ export function JournalPage() {
         </Card>
       )}
 
-      <TradeFormModal open={openForm} fund={selectedFund} onClose={() => setOpenForm(false)} />
+      <TradeFormModal open={openForm} fund={selectedFund} prefill={prefill} onClose={() => setOpenForm(false)} />
       <TradeDetailModal trade={activeTrade} fund={selectedFund} onClose={() => setActiveTrade(null)} />
     </div>
   )
@@ -142,18 +179,21 @@ function initialTradeForm() {
   }
 }
 
-function TradeFormModal({ open, fund, onClose }) {
+function TradeFormModal({ open, fund, prefill, onClose }) {
   const { data: strategies = [] } = useStrategies(fund.id)
   const openTrade = useOpenTrade()
   const [form, setForm] = useState(initialTradeForm)
   const [ruleChecks, setRuleChecks] = useState({})
+  const [tagged, setTagged] = useState([])
+  const goals = useGoalStatus()
 
   useEffect(() => {
     if (open) {
-      setForm(initialTradeForm())
+      setForm({ ...initialTradeForm(), ...prefill })
       setRuleChecks({})
+      setTagged([])
     }
-  }, [open])
+  }, [open, prefill])
 
   const strategy = strategies.find((s) => s.id === form.strategyId)
 
@@ -172,7 +212,7 @@ function TradeFormModal({ open, fund, onClose }) {
       stopLoss: form.stopLoss ? Number(form.stopLoss) : null,
       targetPrice: form.targetPrice ? Number(form.targetPrice) : null,
       notes: form.notes,
-      tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+      tags: [...(form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : []), ...tagged],
       ruleResults,
     })
     onClose()
@@ -181,6 +221,12 @@ function TradeFormModal({ open, fund, onClose }) {
   return (
     <Modal open={open} onClose={onClose} title={`Log trade — ${fund.name}`} wide>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {goals.breaches.map((b) => (
+          <div key={b} className="flex items-start gap-2 rounded-xl bg-[var(--red-soft)] text-[var(--red)] px-3 py-2 text-sm">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+            {b}
+          </div>
+        ))}
         <div className="grid sm:grid-cols-3 gap-4">
           <Field label="Symbol">
             <Input
@@ -269,6 +315,8 @@ function TradeFormModal({ open, fund, onClose }) {
           <Input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="breakout, earnings" />
         </Field>
 
+        <TagPicker tags={tagged} onChange={setTagged} />
+
         <Field label="Notes — reasoning / emotion">
           <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
         </Field>
@@ -291,9 +339,16 @@ function TradeDetailModal({ trade, fund, onClose }) {
   const [exitDate, setExitDate] = useState(() => format(new Date(), "yyyy-MM-dd'T'HH:mm"))
   const [exitFees, setExitFees] = useState('0')
   const [notes, setNotes] = useState('')
+  const [tags, setTags] = useState([])
+  const [mode, setMode] = useState(null) // 'edit' | 'add' | 'partial' | null
+  const { data: strategies = [] } = useStrategies(fund.id)
 
   useEffect(() => {
-    if (trade) setNotes(trade.notes || '')
+    if (trade) {
+      setNotes(trade.notes || '')
+      setTags(trade.tags || [])
+      setMode(null)
+    }
   }, [trade?.id])
 
   if (!trade) return null
@@ -312,6 +367,14 @@ function TradeDetailModal({ trade, fund, onClose }) {
   async function handleSaveNotes() {
     await updateTrade.mutateAsync({ id: trade.id, notes })
   }
+
+  function handleTags(next) {
+    setTags(next)
+    updateTrade.mutate({ id: trade.id, tags: next })
+  }
+
+  const toggleMode = (m) => setMode(mode === m ? null : m)
+  const freeTags = splitTags(tags).free
 
   async function handleUpload(e) {
     const file = e.target.files?.[0]
@@ -353,6 +416,25 @@ function TradeDetailModal({ trade, fund, onClose }) {
           </div>
         )}
 
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => toggleMode('edit')}>
+            <Pencil size={14} /> Edit details
+          </Button>
+          {trade.status === 'open' && (
+            <>
+              <Button variant="secondary" onClick={() => toggleMode('add')}>
+                <TrendingUp size={14} /> Add to position
+              </Button>
+              <Button variant="secondary" onClick={() => toggleMode('partial')}>
+                <Scissors size={14} /> Partial exit
+              </Button>
+            </>
+          )}
+        </div>
+        {mode === 'edit' && <AmendForm trade={trade} fund={fund} strategies={strategies} onDone={onClose} />}
+        {mode === 'add' && <AddForm trade={trade} fund={fund} onDone={onClose} />}
+        {mode === 'partial' && <PartialForm trade={trade} fund={fund} onDone={onClose} />}
+
         {trade.status === 'open' && (
           <form onSubmit={handleClose} className="border-t border-[var(--border)] pt-4 grid sm:grid-cols-3 gap-3 items-end">
             <Field label="Exit price">
@@ -369,6 +451,18 @@ function TradeDetailModal({ trade, fund, onClose }) {
             </Button>
           </form>
         )}
+
+        <div className="border-t border-[var(--border)] pt-4 flex flex-col gap-3">
+          <div className="text-xs font-medium text-[var(--ink-muted)]">Review</div>
+          <TagPicker tags={tags} onChange={handleTags} />
+          {freeTags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {freeTags.map((t) => (
+                <Pill key={t}>{t}</Pill>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="border-t border-[var(--border)] pt-4 flex flex-col gap-2">
           <Field label="Notes">
@@ -417,7 +511,7 @@ function Info({ label, value, tone }) {
   const toneClass = tone === 'positive' ? 'text-[var(--accent)]' : tone === 'negative' ? 'text-[var(--red)]' : ''
   return (
     <div>
-      <div className="text-xs text-[var(--ink-faint)] font-mono uppercase">{label}</div>
+      <div className="text-xs text-[var(--ink-faint)] font-medium">{label}</div>
       <div className={`tabular font-medium ${toneClass}`}>{value}</div>
     </div>
   )

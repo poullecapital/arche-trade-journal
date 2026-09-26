@@ -3,23 +3,8 @@ import { Download, Moon, Sun } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { supabase } from '../lib/supabase'
 import { Button, Card, PageHeader } from '../components/ui'
-
-function toCsv(rows) {
-  if (rows.length === 0) return ''
-  const headers = Object.keys(rows[0])
-  const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
-  return [headers.join(','), ...rows.map((r) => headers.map((h) => escape(r[h])).join(','))].join('\n')
-}
-
-function download(filename, content) {
-  const blob = new Blob([content], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
+import { ImportTrades } from '../components/ImportTrades'
+import { downloadFile as download, toCsv } from '../lib/csv'
 
 export function SettingsPage() {
   const { theme, setTheme } = useTheme()
@@ -56,11 +41,11 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-xl">
-      <PageHeader title="Settings" />
+    <div className="flex flex-col gap-5 max-w-3xl">
+      <PageHeader title="Settings" subtitle="Appearance and data export" />
 
       <Card className="p-5 flex flex-col gap-4">
-        <h2 className="font-display text-lg font-semibold">Appearance</h2>
+        <h2 className="font-display text-base">Appearance</h2>
         <div className="flex gap-2">
           <Button variant={theme === 'light' ? 'primary' : 'secondary'} onClick={() => setTheme('light')}>
             <Sun size={15} /> Light
@@ -72,7 +57,7 @@ export function SettingsPage() {
       </Card>
 
       <Card className="p-5 flex flex-col gap-4">
-        <h2 className="font-display text-lg font-semibold">Data export</h2>
+        <h2 className="font-display text-base">Data export</h2>
         <p className="text-sm text-[var(--ink-muted)]">
           Every number in Arche is derived from the ledger — export it any time as a plain CSV escape hatch.
         </p>
@@ -85,6 +70,8 @@ export function SettingsPage() {
           </Button>
         </div>
       </Card>
+
+      <ImportTrades />
     </div>
   )
 }

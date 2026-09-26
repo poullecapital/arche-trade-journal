@@ -1,10 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { addDays, differenceInCalendarDays, format } from 'date-fns'
 import { Line, LineChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useFundContext } from '../context/FundContext'
 import { useFundSummaries, useFirmSummary } from '../hooks/useFunds'
 import { useAllTrades } from '../hooks/useTrades'
-import { Card, EmptyState, PageHeader, Stat, formatCurrency, formatNumber } from '../components/ui'
+import { Card, EmptyState, PageHeader, Stat, Tabs, formatCurrency, formatNumber } from '../components/ui'
 
 function mean(values) {
   return values.length ? values.reduce((s, v) => s + v, 0) / values.length : 0
@@ -67,11 +67,18 @@ function runMonteCarlo(tradePnls, numTrades) {
   }
 }
 
+const TABS = [
+  { id: 'trend', label: 'Trend' },
+  { id: 'simulation', label: 'Simulation' },
+  { id: 'compare', label: 'Compare funds' },
+]
+
 export function ForecastPage() {
   const { funds } = useFundContext()
   const { data: summaries = [] } = useFundSummaries()
   const { data: firm } = useFirmSummary()
   const { data: trades = [] } = useAllTrades()
+  const [tab, setTab] = useState('trend')
 
   const closedTrades = useMemo(
     () => trades.filter((t) => t.status === 'closed' && t.exit_date).sort((a, b) => new Date(a.exit_date) - new Date(b.exit_date)),
@@ -162,10 +169,10 @@ export function ForecastPage() {
   }, [closedTrades])
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader eyebrow="Growth Intelligence" title="Forecast" />
+    <div className="flex flex-col gap-5">
+      <PageHeader title="Forecast" subtitle="Where your current edge points" />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Current value" value={formatCurrency(currentValue)} />
         <Stat label="Invested capital" value={formatCurrency(investedCapital)} />
         <Stat
@@ -176,8 +183,11 @@ export function ForecastPage() {
         <Stat label="CAGR" value={cagr != null ? `${cagr >= 0 ? '+' : ''}${formatNumber(cagr, 1)}%` : '—'} sub={years ? `over ${formatNumber(years, 1)}y` : undefined} />
       </div>
 
+      <Tabs tabs={TABS} value={tab} onChange={setTab} />
+
+      {tab === 'trend' && (
       <Card className="p-5">
-        <h2 className="font-display text-lg font-semibold mb-1">90-day trend projection</h2>
+        <h2 className="font-display text-base mb-1">90-day trend projection</h2>
         <p className="text-sm text-[var(--ink-muted)] mb-4">
           Base/best/worst extrapolate your historical trade frequency and P&amp;L distribution forward — a transparent trendline, not a simulation.
         </p>
@@ -197,11 +207,11 @@ export function ForecastPage() {
                   width={70}
                 />
                 <Tooltip
-                  contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                  contentStyle={{ background: 'var(--surface-solid)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
                   formatter={(v) => formatCurrency(v)}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--ink)" strokeWidth={2} dot={false} connectNulls />
+                <Line type="monotone" dataKey="actual" name="Actual" stroke="var(--primary)" strokeWidth={2} dot={false} connectNulls />
                 <Line type="monotone" dataKey="best" name="Best case" stroke="var(--accent)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls />
                 <Line type="monotone" dataKey="base" name="Base case" stroke="var(--amber)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls />
                 <Line type="monotone" dataKey="worst" name="Worst case" stroke="var(--red)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls />
@@ -211,8 +221,11 @@ export function ForecastPage() {
         )}
       </Card>
 
+      )}
+
+      {tab === 'simulation' && (
       <Card className="p-5">
-        <h2 className="font-display text-lg font-semibold mb-1">Monte Carlo simulation</h2>
+        <h2 className="font-display text-base mb-1">Monte Carlo simulation</h2>
         <p className="text-sm text-[var(--ink-muted)] mb-4">
           {SIMULATIONS} simulated futures, each resampling from your actual closed-trade P&amp;L distribution — probabilistic
           growth and drawdown risk, not a trendline.
@@ -248,7 +261,7 @@ export function ForecastPage() {
                     width={70}
                   />
                   <Tooltip
-                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
+                    contentStyle={{ background: 'var(--surface-solid)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
                     formatter={(v) => formatCurrency(v)}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -265,20 +278,23 @@ export function ForecastPage() {
         )}
       </Card>
 
+      )}
+
+      {tab === 'compare' && (
       <div>
-        <h2 className="font-display text-lg font-semibold mb-3">Fund comparison</h2>
+        <h2 className="font-display text-base mb-3">Fund comparison</h2>
         {summaries.length === 0 ? (
-          <EmptyState title="No funds yet" description="Create a fund in Funds & Ledger to compare performance here." />
+          <EmptyState title="No funds yet" description="Create a fund in Ledger to compare performance here." />
         ) : (
           <Card className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-[var(--ink-faint)] font-mono uppercase border-b border-[var(--border)]">
-                  <th className="px-4 py-2 font-normal">Fund</th>
-                  <th className="px-4 py-2 font-normal text-right">NAV</th>
-                  <th className="px-4 py-2 font-normal text-right">Capital</th>
-                  <th className="px-4 py-2 font-normal text-right">Realized P&amp;L</th>
-                  <th className="px-4 py-2 font-normal text-right">Idle cash %</th>
+                <tr className="text-left text-xs text-[var(--ink-faint)] font-medium border-b border-[var(--border)]">
+                  <th className="px-5 py-3">Fund</th>
+                  <th className="px-5 py-3 text-right">NAV</th>
+                  <th className="px-5 py-3 text-right">Capital</th>
+                  <th className="px-5 py-3 text-right">Realized P&amp;L</th>
+                  <th className="px-5 py-3 text-right">Idle cash %</th>
                 </tr>
               </thead>
               <tbody>
@@ -287,17 +303,17 @@ export function ForecastPage() {
                   const idlePct = nav > 0 ? (Number(s.cash_balance) / nav) * 100 : 0
                   return (
                     <tr key={s.fund_id} className="border-b border-[var(--border)] last:border-0">
-                      <td className="px-4 py-2 font-medium">{s.name}</td>
-                      <td className="px-4 py-2 text-right tabular">{formatCurrency(nav, s.currency)}</td>
-                      <td className="px-4 py-2 text-right tabular">{formatCurrency(s.capital, s.currency)}</td>
+                      <td className="px-5 py-3 font-medium">{s.name}</td>
+                      <td className="px-5 py-3 text-right tabular">{formatCurrency(nav, s.currency)}</td>
+                      <td className="px-5 py-3 text-right tabular">{formatCurrency(s.capital, s.currency)}</td>
                       <td
-                        className={`px-4 py-2 text-right tabular font-medium ${
+                        className={`px-5 py-3 text-right tabular font-medium ${
                           s.realized_pnl > 0 ? 'text-[var(--accent)]' : s.realized_pnl < 0 ? 'text-[var(--red)]' : ''
                         }`}
                       >
                         {formatCurrency(s.realized_pnl, s.currency)}
                       </td>
-                      <td className="px-4 py-2 text-right tabular">{formatNumber(idlePct, 0)}%</td>
+                      <td className="px-5 py-3 text-right tabular">{formatNumber(idlePct, 0)}%</td>
                     </tr>
                   )
                 })}
@@ -306,6 +322,7 @@ export function ForecastPage() {
           </Card>
         )}
       </div>
+      )}
     </div>
   )
 }

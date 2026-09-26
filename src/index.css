@@ -1,62 +1,101 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --bg: #f4f5f3;
-  --surface: #ffffff;
-  --surface-2: #e9ebe7;
-  --ink: #12140f;
-  --ink-muted: #565b52;
-  --ink-faint: #868c81;
-  --border: #d4d8cf;
-  --accent: #146c4c;
-  --accent-ink: #ffffff;
-  --accent-soft: #e0ede5;
-  --amber: #8a5d10;
-  --amber-soft: #f1e6cd;
-  --red: #a13324;
-  --red-soft: #f4e0da;
-  --shadow: 0 1px 2px rgba(15, 20, 12, 0.08);
+  --bg: #eceffb;
+  --bg-mesh:
+    radial-gradient(60rem 40rem at 8% 0%, #c3d2ff 0%, transparent 60%),
+    radial-gradient(50rem 36rem at 100% 0%, #e6c6ff 0%, transparent 58%),
+    radial-gradient(56rem 40rem at 85% 100%, #b8efdc 0%, transparent 60%),
+    radial-gradient(40rem 30rem at 0% 100%, #ffd4bb 0%, transparent 60%);
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-solid: #ffffff;
+  --surface-2: #eceffa;
+  --surface-edge: rgba(255, 255, 255, 0.95);
+  --ink: #1a1d3a;
+  --ink-muted: #555a7c;
+  --ink-faint: #9298b6;
+  --border: rgba(120, 130, 190, 0.18);
+  --primary: #5b5ce6;
+  --primary-hi: #7b7cf5;
+  --primary-lo: #4344c8;
+  --primary-ink: #ffffff;
+  --accent: #0b9b6b;
+  --accent-soft: #d9f4e9;
+  --amber: #b45f06;
+  --amber-soft: #fdecc8;
+  --red: #dc3b4a;
+  --red-soft: #fde1e4;
+  --shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 4px rgba(60, 70, 130, 0.06),
+    0 14px 30px -10px rgba(60, 70, 130, 0.22), 0 34px 60px -34px rgba(91, 92, 230, 0.3);
+  --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(60, 70, 130, 0.1), 0 6px 14px -6px rgba(60, 70, 130, 0.25);
+  --shadow-inset: inset 0 2px 5px rgba(60, 70, 130, 0.14), inset 0 -1px 0 rgba(255, 255, 255, 0.9);
+  --btn-glow: 0 8px 18px -6px rgba(91, 92, 230, 0.65);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #090b08;
-    --surface: #0f120d;
-    --surface-2: #161a12;
-    --ink: #dfe6d9;
-    --ink-muted: #838d7b;
-    --ink-faint: #565e50;
-    --border: #1e2419;
-    --accent: #33e28f;
-    --accent-ink: #04150c;
-    --accent-soft: #102b1c;
-    --amber: #e0ab52;
-    --amber-soft: #2a2013;
-    --red: #ff6a52;
-    --red-soft: #2a1712;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --bg: #0a0c1c;
+    --bg-mesh:
+      radial-gradient(60rem 40rem at 8% 0%, #1c2350 0%, transparent 60%),
+      radial-gradient(50rem 36rem at 100% 0%, #2e1a52 0%, transparent 58%),
+      radial-gradient(56rem 40rem at 85% 100%, #0d3a3a 0%, transparent 60%);
+    --surface: rgba(24, 28, 58, 0.68);
+    --surface-solid: #181c3a;
+    --surface-2: #222850;
+    --surface-edge: rgba(150, 160, 255, 0.16);
+    --ink: #eceeff;
+    --ink-muted: #a3a9d0;
+    --ink-faint: #6a7099;
+    --border: rgba(150, 160, 255, 0.14);
+    --primary: #6d6ef0;
+    --primary-hi: #8c8dff;
+    --primary-lo: #4c4dd0;
+    --primary-ink: #ffffff;
+    --accent: #3ddc9b;
+    --accent-soft: #0f3026;
+    --amber: #fbbf24;
+    --amber-soft: #33290f;
+    --red: #ff7b88;
+    --red-soft: #3a1820;
+    --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 2px 4px rgba(0, 0, 0, 0.3), 0 18px 40px -12px rgba(0, 0, 0, 0.6);
+    --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 14px -6px rgba(0, 0, 0, 0.6);
+    --shadow-inset: inset 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+    --btn-glow: 0 8px 20px -6px rgba(109, 110, 240, 0.7);
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #090b08;
-  --surface: #0f120d;
-  --surface-2: #161a12;
-  --ink: #dfe6d9;
-  --ink-muted: #838d7b;
-  --ink-faint: #565e50;
-  --border: #1e2419;
-  --accent: #33e28f;
-  --accent-ink: #04150c;
-  --accent-soft: #102b1c;
-  --amber: #e0ab52;
-  --amber-soft: #2a2013;
-  --red: #ff6a52;
-  --red-soft: #2a1712;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --bg: #0a0c1c;
+  --bg-mesh:
+    radial-gradient(60rem 40rem at 8% 0%, #1c2350 0%, transparent 60%),
+    radial-gradient(50rem 36rem at 100% 0%, #2e1a52 0%, transparent 58%),
+    radial-gradient(56rem 40rem at 85% 100%, #0d3a3a 0%, transparent 60%);
+  --surface: rgba(24, 28, 58, 0.68);
+  --surface-solid: #181c3a;
+  --surface-2: #222850;
+  --surface-edge: rgba(150, 160, 255, 0.16);
+  --ink: #eceeff;
+  --ink-muted: #a3a9d0;
+  --ink-faint: #6a7099;
+  --border: rgba(150, 160, 255, 0.14);
+  --primary: #6d6ef0;
+  --primary-hi: #8c8dff;
+  --primary-lo: #4c4dd0;
+  --primary-ink: #ffffff;
+  --accent: #3ddc9b;
+  --accent-soft: #0f3026;
+  --amber: #fbbf24;
+  --amber-soft: #33290f;
+  --red: #ff7b88;
+  --red-soft: #3a1820;
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 2px 4px rgba(0, 0, 0, 0.3), 0 18px 40px -12px rgba(0, 0, 0, 0.6);
+  --shadow-sm: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 14px -6px rgba(0, 0, 0, 0.6);
+  --shadow-inset: inset 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  --btn-glow: 0 8px 20px -6px rgba(109, 110, 240, 0.7);
   color-scheme: dark;
 }
 
@@ -66,37 +105,107 @@
 
 body {
   margin: 0;
-  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  background: var(--bg);
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--bg);
+  background-image: var(--bg-mesh);
+  background-attachment: fixed;
   color: var(--ink);
   font-size: 14px;
+  -webkit-font-smoothing: antialiased;
 }
 
 .font-display {
-  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  font-weight: 700;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
 
-.font-mono,
-.tabular {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
+/* ---------- 3D surfaces ---------- */
+
+/* Raised glass panel */
+.card-3d {
+  background: var(--surface);
+  border: 1px solid var(--surface-edge);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
 }
 
-input,
-textarea,
-select,
-button {
-  font-family: inherit;
-  color: inherit;
+/* Small raised control (icon buttons, secondary buttons) */
+.raised {
+  background: var(--surface-solid);
+  border: 1px solid var(--surface-edge);
+  box-shadow: var(--shadow-sm);
 }
 
-input:focus,
-textarea:focus,
-select:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+/* Pressed-in surface (inputs, tab track) */
+.inset {
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-inset);
+}
+
+/* Glossy primary control with a lit top edge */
+.btn-3d {
+  background: linear-gradient(180deg, var(--primary-hi) 0%, var(--primary) 55%, var(--primary-lo) 100%);
+  color: var(--primary-ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -2px 0 rgba(0, 0, 0, 0.16), var(--btn-glow);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+.btn-3d:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+.btn-3d:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes bar-rise {
+  from {
+    transform: scaleY(0.05);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* Cards that lean toward the cursor */
+.tilt {
+  transition: transform 0.18s ease-out, box-shadow 0.18s ease-out;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tilt {
+    transform: none !important;
+    transition: none;
+  }
+}
+
+@layer base {
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+    color: inherit;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
 }
 
 ::-webkit-scrollbar {
@@ -106,4 +215,21 @@ select:focus {
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 4px;
+}
+
+/* ---------- Print (monthly report → Save as PDF) ---------- */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000;
+  }
+  .card-3d {
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+  }
 }

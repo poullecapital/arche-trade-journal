@@ -85,6 +85,65 @@ export function useCloseTrade() {
   })
 }
 
+export function useAmendTrade() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (t) => {
+      const { error } = await supabase.rpc('amend_trade', {
+        p_trade_id: t.id,
+        p_symbol: t.symbol,
+        p_direction: t.direction,
+        p_strategy_id: t.strategyId || null,
+        p_entry_price: t.entryPrice,
+        p_entry_quantity: t.entryQuantity,
+        p_entry_date: t.entryDate,
+        p_entry_fees: t.entryFees || 0,
+        p_stop_loss: t.stopLoss ?? null,
+        p_target_price: t.targetPrice ?? null,
+        p_exit_price: t.exitPrice ?? null,
+        p_exit_date: t.exitDate ?? null,
+        p_exit_fees: t.exitFees || 0,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => invalidateTradeQueries(queryClient),
+  })
+}
+
+export function useAddToTrade() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ tradeId, price, quantity, fees }) => {
+      const { error } = await supabase.rpc('add_to_trade', {
+        p_trade_id: tradeId,
+        p_price: price,
+        p_quantity: quantity,
+        p_fees: fees || 0,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => invalidateTradeQueries(queryClient),
+  })
+}
+
+export function usePartialClose() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ tradeId, quantity, exitPrice, exitDate, exitFees }) => {
+      const { data, error } = await supabase.rpc('partial_close_trade', {
+        p_trade_id: tradeId,
+        p_quantity: quantity,
+        p_exit_price: exitPrice,
+        p_exit_date: exitDate,
+        p_exit_fees: exitFees || 0,
+      })
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => invalidateTradeQueries(queryClient),
+  })
+}
+
 export function useUpdateTrade() {
   const queryClient = useQueryClient()
   return useMutation({
