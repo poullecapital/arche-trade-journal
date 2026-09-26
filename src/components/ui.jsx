@@ -1,6 +1,23 @@
 import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 
+// Brand mark — same artwork as public/favicon.svg.
+export function LogoMark({ className = '' }) {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" className={className} role="img" aria-label="Arche">
+      <defs>
+        <linearGradient id="arche-logo" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#6660f0" />
+          <stop offset="1" stopColor="#4038cc" />
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="9" fill="url(#arche-logo)" />
+      <path d="M8.5 24 16 8l7.5 16" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="m11.5 19.5 3-2.5 2 1.5 4-3.5" stroke="#34d399" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export function Card({ children, className = '', tilt = false, ...props }) {
   const ref = useRef(null)
 
